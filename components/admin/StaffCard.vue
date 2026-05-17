@@ -12,7 +12,8 @@
       <button
         class="card-menu-btn"
         type="button"
-        title="More options"
+        title="Edit staff"
+        @click="editStaff"
       >
         <Icon
           name="solar:menu-dots-bold"
@@ -163,11 +164,16 @@ const props = defineProps({
   }
 })
 
-defineEmits([
+const emit = defineEmits([
   'time-in',
   'mark-absent',
-  'toggle-status'
+  'toggle-status',
+  'edit-staff'
 ])
+
+const editStaff = () => {
+  emit('edit-staff', props.staff)
+}
 
 const displayedSalary = computed(() => {
   if (props.staff.salaryType === 'Monthly') {
@@ -239,6 +245,19 @@ const disableAbsent = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.card-menu-btn:hover {
+  background: #e0f5f2;
+  color: #148b80;
+  transform: translateY(-2px);
 }
 
 /* PHOTO */

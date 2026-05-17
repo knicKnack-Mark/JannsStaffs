@@ -118,6 +118,7 @@
             @time-in="markTimeIn"
             @mark-absent="markAbsent"
             @toggle-status="toggleStatus"
+            @edit-staff="openEditStaffModal"
           />
         </div>
 
@@ -149,6 +150,160 @@
       @close="closeAddStaffModal"
       @save="addStaff"
     />
+
+    <!-- EDIT STAFF MODAL -->
+    <Teleport to="body">
+      <div
+        v-if="showEditStaffModal"
+        class="custom-modal-backdrop"
+      >
+        <div class="custom-modal-card">
+          <div class="modal-header-custom">
+            <div>
+              <h5 class="fw-bold mb-1">
+                Update Staff
+              </h5>
+
+              <p class="text-muted mb-0">
+                Edit staff profile, salary, and status.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="modal-close-btn"
+              @click="closeEditStaffModal"
+            >
+              <Icon
+                name="solar:close-circle-bold-duotone"
+                size="24"
+              />
+            </button>
+          </div>
+
+          <form @submit.prevent="updateStaff">
+            <div class="row g-3 mt-2">
+              <div class="col-12">
+                <label class="form-label">Full Name</label>
+                <input
+                  v-model="editForm.name"
+                  type="text"
+                  class="form-control modal-input"
+                  required
+                />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Position</label>
+                <input
+                  v-model="editForm.position"
+                  type="text"
+                  class="form-control modal-input"
+                  required
+                />
+              </div>
+
+              <div class="col-12">
+                <label class="form-label">Phone</label>
+                <input
+                  v-model="editForm.phone"
+                  type="text"
+                  class="form-control modal-input"
+                  required
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label">Salary Type</label>
+                <select
+                  v-model="editForm.salaryType"
+                  class="form-select modal-input"
+                  required
+                >
+                  <option value="Monthly">
+                    Monthly
+                  </option>
+
+                  <option value="Daily">
+                    Daily
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  {{ editForm.salaryType === 'Monthly' ? 'Monthly Salary' : 'Daily Rate' }}
+                </label>
+
+                <input
+                  v-if="editForm.salaryType === 'Monthly'"
+                  v-model.number="editForm.monthlySalary"
+                  type="number"
+                  class="form-control modal-input"
+                  required
+                />
+
+                <input
+                  v-else
+                  v-model.number="editForm.dailyRate"
+                  type="number"
+                  class="form-control modal-input"
+                  required
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label">Status</label>
+                <select
+                  v-model="editForm.status"
+                  class="form-select modal-input"
+                  required
+                >
+                  <option value="Active">
+                    Active
+                  </option>
+
+                  <option value="Inactive">
+                    Inactive
+                  </option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-6">
+                <label class="form-label">Avatar URL</label>
+                <input
+                  v-model="editForm.avatar"
+                  type="text"
+                  class="form-control modal-input"
+                />
+              </div>
+            </div>
+
+            <div class="modal-actions mt-4">
+              <button
+                type="button"
+                class="btn cancel-btn"
+                @click="closeEditStaffModal"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                class="btn save-btn"
+              >
+                <Icon
+                  name="solar:diskette-bold-duotone"
+                  size="18"
+                />
+
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -164,6 +319,19 @@ const search = ref('')
 const selectedStatus = ref('All')
 const selectedSalaryType = ref('All')
 const showAddStaffModal = ref(false)
+const showEditStaffModal = ref(false)
+
+const editForm = ref({
+  id: null,
+  name: '',
+  position: '',
+  phone: '',
+  salaryType: 'Monthly',
+  monthlySalary: 0,
+  dailyRate: 0,
+  status: 'Active',
+  avatar: ''
+})
 
 const staffList = ref([
   {
@@ -308,6 +476,38 @@ const closeAddStaffModal = () => {
   showAddStaffModal.value = false
 }
 
+const openEditStaffModal = (staff) => {
+  editForm.value = {
+    id: staff.id,
+    name: staff.name,
+    position: staff.position,
+    phone: staff.phone,
+    salaryType: staff.salaryType,
+    monthlySalary: staff.monthlySalary || 0,
+    dailyRate: staff.dailyRate || 0,
+    status: staff.status,
+    avatar: staff.avatar
+  }
+
+  showEditStaffModal.value = true
+}
+
+const closeEditStaffModal = () => {
+  showEditStaffModal.value = false
+
+  editForm.value = {
+    id: null,
+    name: '',
+    position: '',
+    phone: '',
+    salaryType: 'Monthly',
+    monthlySalary: 0,
+    dailyRate: 0,
+    status: 'Active',
+    avatar: ''
+  }
+}
+
 const addStaff = (form) => {
   const newId = staffList.value.length
     ? Math.max(...staffList.value.map(staff => staff.id)) + 1
@@ -319,8 +519,8 @@ const addStaff = (form) => {
     position: form.position,
     phone: form.phone,
     salaryType: form.salaryType,
-    monthlySalary: form.salaryType === 'Monthly' ? form.monthlySalary : null,
-    dailyRate: form.salaryType === 'Daily' ? form.dailyRate : null,
+    monthlySalary: form.salaryType === 'Monthly' ? Number(form.monthlySalary || 0) : null,
+    dailyRate: form.salaryType === 'Daily' ? Number(form.dailyRate || 0) : null,
     status: form.status,
     attendance: 'Not Timed In',
     avatar: `https://i.pravatar.cc/300?img=${form.avatar}`
@@ -328,6 +528,35 @@ const addStaff = (form) => {
 
   staffList.value.unshift(newStaff)
   closeAddStaffModal()
+}
+
+const updateStaff = () => {
+  const index = staffList.value.findIndex(staff => staff.id === editForm.value.id)
+
+  if (index === -1) {
+    return
+  }
+
+  staffList.value[index] = {
+    ...staffList.value[index],
+    name: editForm.value.name,
+    position: editForm.value.position,
+    phone: editForm.value.phone,
+    salaryType: editForm.value.salaryType,
+    monthlySalary: editForm.value.salaryType === 'Monthly'
+      ? Number(editForm.value.monthlySalary || 0)
+      : null,
+    dailyRate: editForm.value.salaryType === 'Daily'
+      ? Number(editForm.value.dailyRate || 0)
+      : null,
+    status: editForm.value.status,
+    avatar: editForm.value.avatar || staffList.value[index].avatar,
+    attendance: editForm.value.status === 'Inactive'
+      ? 'Not Timed In'
+      : staffList.value[index].attendance
+  }
+
+  closeEditStaffModal()
 }
 
 const markTimeIn = (staff) => {
@@ -458,6 +687,115 @@ const toggleStatus = (staff) => {
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
 }
 
+/* EDIT MODAL */
+.custom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+
+  z-index: 99999;
+
+  background: rgba(15, 23, 42, 0.45);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+}
+
+.custom-modal-card {
+  width: min(100%, 620px);
+  max-height: 90vh;
+  overflow-y: auto;
+
+  background: white;
+
+  border-radius: 28px;
+
+  padding: 24px;
+
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+}
+
+.modal-header-custom {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal-close-btn {
+  width: 42px;
+  height: 42px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  background: #f4f8f7;
+  color: #64748b;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-input {
+  height: 50px;
+
+  border: none;
+
+  border-radius: 16px;
+
+  background: #f4f8f7;
+}
+
+.modal-input:focus {
+  background: #f4f8f7;
+  box-shadow: 0 0 0 3px rgba(20, 139, 128, 0.12);
+}
+
+.form-label {
+  color: #334155;
+
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-btn,
+.save-btn {
+  height: 46px;
+
+  border-radius: 15px;
+
+  padding: 0 18px;
+
+  font-weight: 800;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cancel-btn {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.save-btn {
+  background: linear-gradient(180deg, #0b5b54, #148b80);
+  color: white;
+}
+
+.save-btn:hover {
+  color: white;
+}
+
 /* RESPONSIVE */
 @media (max-width: 767px) {
   .staff-toolbar {
@@ -466,6 +804,16 @@ const toggleStatus = (staff) => {
   }
 
   .add-staff-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .save-btn {
     width: 100%;
     justify-content: center;
   }
