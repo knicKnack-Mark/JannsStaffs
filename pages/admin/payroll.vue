@@ -1,0 +1,1030 @@
+<template>
+  <div class="payroll-page">
+    <!-- PAGE HEADER -->
+    <section class="page-header mb-4">
+      <div class="header-actions">
+        <button class="btn btn-light border action-btn">
+          <Icon name="solar:printer-2-bold-duotone" size="20" />
+          Print Payroll
+        </button>
+
+        <button class="btn btn-success action-btn">
+          <Icon name="solar:file-download-bold-duotone" size="20" />
+          Export Report
+        </button>
+      </div>
+    </section>
+
+    <!-- SUMMARY CARDS -->
+    <section class="mb-4">
+      <div class="row g-4">
+        <div
+          v-for="card in payrollCards"
+          :key="card.title"
+          class="col-xl-3 col-md-6"
+        >
+          <div class="summary-card h-100" :class="`summary-${card.color}`">
+            <div class="summary-icon">
+              <Icon :name="card.icon" size="28" />
+            </div>
+
+            <div>
+              <p class="summary-title mb-1">{{ card.title }}</p>
+              <h3 class="summary-value mb-1">{{ card.value }}</h3>
+              <p class="summary-desc mb-0">{{ card.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FILTERS -->
+    <section class="filter-card mb-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-xl-4 col-lg-4 col-md-6">
+          <label class="form-label">Search Staff</label>
+          <div class="search-box">
+            <Icon name="solar:magnifer-bold-duotone" size="20" />
+            <input
+              v-model="search"
+              type="text"
+              class="form-control"
+              placeholder="Search name or position..."
+            />
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-lg-3 col-md-6">
+          <label class="form-label">Month</label>
+          <select v-model="selectedMonth" class="form-select">
+            <option value="May 2026">May 2026</option>
+            <option value="April 2026">April 2026</option>
+            <option value="March 2026">March 2026</option>
+            <option value="February 2026">February 2026</option>
+            <option value="January 2026">January 2026</option>
+          </select>
+        </div>
+
+        <div class="col-xl-2 col-lg-2 col-md-6">
+          <label class="form-label">Status</label>
+          <select v-model="selectedStatus" class="form-select">
+            <option value="All">All</option>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+
+        <div class="col-xl-3 col-lg-3 col-md-6">
+          <label class="form-label">Position</label>
+          <select v-model="selectedPosition" class="form-select">
+            <option value="All">All</option>
+            <option
+              v-for="position in positions"
+              :key="position"
+              :value="position"
+            >
+              {{ position }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAYROLL TABLE -->
+    <section class="table-card">
+      <div class="table-card-header">
+        <div>
+          <h5 class="mb-1">Staff Payroll List</h5>
+          <p class="mb-0">
+            Showing payroll records for {{ selectedMonth }}
+          </p>
+        </div>
+
+        <span class="record-count">
+          {{ filteredPayroll.length }} records
+        </span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table align-middle payroll-table mb-0">
+          <thead>
+            <tr>
+              <th>Staff</th>
+              <th>Position</th>
+              <th>Rate / Salary</th>
+              <th>Present</th>
+              <th>Absent</th>
+              <th>Gross Salary</th>
+              <th>Deductions</th>
+              <th>Net Salary</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr v-for="staff in filteredPayroll" :key="staff.id">
+              <td>
+                <div class="staff-info">
+                  <div class="staff-avatar">
+                    {{ getInitials(staff.name) }}
+                  </div>
+                  <div>
+                    <h6 class="mb-0">{{ staff.name }}</h6>
+                    <small>{{ staff.employeeId }}</small>
+                  </div>
+                </div>
+              </td>
+
+              <td>{{ staff.position }}</td>
+
+              <td>
+                <strong>{{ formatPeso(staff.salary) }}</strong>
+              </td>
+
+              <td>
+                <span class="attendance present">
+                  {{ staff.presentDays }} days
+                </span>
+              </td>
+
+              <td>
+                <span class="attendance absent">
+                  {{ staff.absentDays }} days
+                </span>
+              </td>
+
+              <td>{{ formatPeso(staff.grossSalary) }}</td>
+
+              <td>
+                <span class="deduction">
+                  -{{ formatPeso(staff.deductions) }}
+                </span>
+              </td>
+
+              <td>
+                <strong class="net-salary">
+                  {{ formatPeso(staff.netSalary) }}
+                </strong>
+              </td>
+
+              <td>
+                <span
+                  class="status-badge"
+                  :class="staff.status.toLowerCase()"
+                >
+                  {{ staff.status }}
+                </span>
+              </td>
+
+              <td>
+                <div class="action-buttons">
+                  <button
+                    class="btn btn-sm btn-light border"
+                    title="View Payslip"
+                    @click="openPayslip(staff)"
+                  >
+                    <Icon name="solar:eye-bold-duotone" size="18" />
+                  </button>
+
+                  <button
+                    class="btn btn-sm btn-light border"
+                    title="Print Payslip"
+                    @click="printPayslip(staff)"
+                  >
+                    <Icon name="solar:printer-2-bold-duotone" size="18" />
+                  </button>
+
+                  <button
+                    v-if="staff.status === 'Pending'"
+                    class="btn btn-sm btn-success"
+                    title="Mark as Paid"
+                    @click="markAsPaid(staff.id)"
+                  >
+                    <Icon name="solar:check-circle-bold-duotone" size="18" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr v-if="filteredPayroll.length === 0">
+              <td colspan="10" class="text-center py-5">
+                <Icon
+                  name="solar:document-bold-duotone"
+                  size="48"
+                  class="empty-icon mb-2"
+                />
+                <h6 class="mb-1">No payroll records found</h6>
+                <p class="mb-0 text-muted">
+                  Try changing your search or filter.
+                </p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PAYSLIP MODAL -->
+    <div
+      v-if="selectedStaff"
+      class="modal fade show payroll-modal"
+      tabindex="-1"
+      style="display: block;"
+    >
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div>
+              <h5 class="modal-title">Payslip Details</h5>
+              <small>{{ selectedMonth }}</small>
+            </div>
+
+            <button
+              type="button"
+              class="btn-close"
+              @click="selectedStaff = null"
+            />
+          </div>
+
+          <div class="modal-body">
+            <div class="payslip-box">
+              <div class="payslip-header">
+                <div>
+                  <h4 class="mb-1">JANNS SPRING RESORT</h4>
+                  <p class="mb-0">Staff Payroll Summary</p>
+                </div>
+
+                <span
+                  class="status-badge"
+                  :class="selectedStaff.status.toLowerCase()"
+                >
+                  {{ selectedStaff.status }}
+                </span>
+              </div>
+
+              <hr />
+
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <div class="detail-item">
+                    <span>Employee Name</span>
+                    <strong>{{ selectedStaff.name }}</strong>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="detail-item">
+                    <span>Employee ID</span>
+                    <strong>{{ selectedStaff.employeeId }}</strong>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="detail-item">
+                    <span>Position</span>
+                    <strong>{{ selectedStaff.position }}</strong>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="detail-item">
+                    <span>Payroll Month</span>
+                    <strong>{{ selectedMonth }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="salary-breakdown mt-4">
+                <h6 class="mb-3">Salary Breakdown</h6>
+
+                <div class="breakdown-row">
+                  <span>Base Salary / Rate</span>
+                  <strong>{{ formatPeso(selectedStaff.salary) }}</strong>
+                </div>
+
+                <div class="breakdown-row">
+                  <span>Days Present</span>
+                  <strong>{{ selectedStaff.presentDays }} days</strong>
+                </div>
+
+                <div class="breakdown-row">
+                  <span>Days Absent</span>
+                  <strong>{{ selectedStaff.absentDays }} days</strong>
+                </div>
+
+                <div class="breakdown-row">
+                  <span>Gross Salary</span>
+                  <strong>{{ formatPeso(selectedStaff.grossSalary) }}</strong>
+                </div>
+
+                <div class="breakdown-row text-danger">
+                  <span>Deductions</span>
+                  <strong>-{{ formatPeso(selectedStaff.deductions) }}</strong>
+                </div>
+
+                <div class="breakdown-row total">
+                  <span>Net Salary</span>
+                  <strong>{{ formatPeso(selectedStaff.netSalary) }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              class="btn btn-light border"
+              @click="selectedStaff = null"
+            >
+              Close
+            </button>
+
+            <button
+              class="btn btn-success"
+              @click="printPayslip(selectedStaff)"
+            >
+              <Icon name="solar:printer-2-bold-duotone" size="18" />
+              Print Payslip
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="selectedStaff"
+      class="modal-backdrop fade show"
+      @click="selectedStaff = null"
+    />
+  </div>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue'
+
+definePageMeta({
+  title: 'Payroll Summary',
+  subtitle: 'Monitor staff salary, attendance, deductions, and payroll status.'
+})
+
+const search = ref('')
+const selectedMonth = ref('May 2026')
+const selectedStatus = ref('All')
+const selectedPosition = ref('All')
+const selectedStaff = ref(null)
+
+const payroll = ref([
+  {
+    id: 1,
+    employeeId: 'JNS-001',
+    name: 'Maria Santos',
+    position: 'Housekeeping',
+    salary: 15000,
+    presentDays: 24,
+    absentDays: 2,
+    grossSalary: 15000,
+    deductions: 1000,
+    status: 'Paid'
+  },
+  {
+    id: 2,
+    employeeId: 'JNS-002',
+    name: 'Juan Dela Cruz',
+    position: 'Maintenance',
+    salary: 18000,
+    presentDays: 22,
+    absentDays: 4,
+    grossSalary: 18000,
+    deductions: 2000,
+    status: 'Pending'
+  },
+  {
+    id: 3,
+    employeeId: 'JNS-003',
+    name: 'Ana Reyes',
+    position: 'Receptionist',
+    salary: 16000,
+    presentDays: 25,
+    absentDays: 1,
+    grossSalary: 16000,
+    deductions: 500,
+    status: 'Paid'
+  },
+  {
+    id: 4,
+    employeeId: 'JNS-004',
+    name: 'Carlo Mendoza',
+    position: 'Pool Attendant',
+    salary: 14000,
+    presentDays: 23,
+    absentDays: 3,
+    grossSalary: 14000,
+    deductions: 1200,
+    status: 'Pending'
+  },
+  {
+    id: 5,
+    employeeId: 'JNS-005',
+    name: 'Grace Villanueva',
+    position: 'Cashier',
+    salary: 17000,
+    presentDays: 26,
+    absentDays: 0,
+    grossSalary: 17000,
+    deductions: 0,
+    status: 'Paid'
+  }
+])
+
+const payrollWithNet = computed(() => {
+  return payroll.value.map((staff) => ({
+    ...staff,
+    netSalary: staff.grossSalary - staff.deductions
+  }))
+})
+
+const positions = computed(() => {
+  return [...new Set(payroll.value.map((staff) => staff.position))]
+})
+
+const filteredPayroll = computed(() => {
+  return payrollWithNet.value.filter((staff) => {
+    const keyword = search.value.toLowerCase()
+
+    const matchesSearch =
+      staff.name.toLowerCase().includes(keyword) ||
+      staff.position.toLowerCase().includes(keyword) ||
+      staff.employeeId.toLowerCase().includes(keyword)
+
+    const matchesStatus =
+      selectedStatus.value === 'All' || staff.status === selectedStatus.value
+
+    const matchesPosition =
+      selectedPosition.value === 'All' ||
+      staff.position === selectedPosition.value
+
+    return matchesSearch && matchesStatus && matchesPosition
+  })
+})
+
+const totalGrossSalary = computed(() => {
+  return filteredPayroll.value.reduce((total, staff) => {
+    return total + staff.grossSalary
+  }, 0)
+})
+
+const totalDeductions = computed(() => {
+  return filteredPayroll.value.reduce((total, staff) => {
+    return total + staff.deductions
+  }, 0)
+})
+
+const totalNetPayroll = computed(() => {
+  return filteredPayroll.value.reduce((total, staff) => {
+    return total + staff.netSalary
+  }, 0)
+})
+
+const totalPendingPayroll = computed(() => {
+  return filteredPayroll.value
+    .filter((staff) => staff.status === 'Pending')
+    .reduce((total, staff) => {
+      return total + staff.netSalary
+    }, 0)
+})
+
+const payrollCards = computed(() => [
+  {
+    title: 'Total Salary Expense',
+    value: formatPeso(totalGrossSalary.value),
+    description: 'Gross payroll amount',
+    icon: 'solar:wallet-money-bold-duotone',
+    color: 'green'
+  },
+  {
+    title: 'Total Deductions',
+    value: formatPeso(totalDeductions.value),
+    description: 'Absences and deductions',
+    icon: 'solar:bill-check-bold-duotone',
+    color: 'orange'
+  },
+  {
+    title: 'Net Payroll',
+    value: formatPeso(totalNetPayroll.value),
+    description: 'Total amount to release',
+    icon: 'solar:money-bag-bold-duotone',
+    color: 'blue'
+  },
+  {
+    title: 'Pending Payroll',
+    value: formatPeso(totalPendingPayroll.value),
+    description: 'Not yet marked as paid',
+    icon: 'solar:clock-circle-bold-duotone',
+    color: 'red'
+  }
+])
+
+const formatPeso = (amount) => {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    maximumFractionDigits: 0
+  }).format(amount)
+}
+
+const getInitials = (name) => {
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+const openPayslip = (staff) => {
+  selectedStaff.value = staff
+}
+
+const markAsPaid = (id) => {
+  const staff = payroll.value.find((item) => item.id === id)
+
+  if (staff) {
+    staff.status = 'Paid'
+  }
+}
+
+const printPayslip = (staff) => {
+  selectedStaff.value = staff
+  window.print()
+}
+</script>
+
+<style scoped>
+.payroll-page {
+  animation: pageFade 0.45s ease;
+}
+
+@keyframes pageFade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #2f8f46;
+}
+
+.page-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 800;
+  color: #162015;
+}
+
+.page-subtitle {
+  color: #6c757d;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 700;
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+}
+
+.summary-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid rgba(22, 32, 21, 0.08);
+  box-shadow: 0 12px 35px rgba(22, 32, 21, 0.08);
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: 0.25s ease;
+}
+
+.summary-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 45px rgba(22, 32, 21, 0.12);
+}
+
+.summary-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  opacity: 0.12;
+}
+
+.summary-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.summary-title {
+  color: #6c757d;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.summary-value {
+  font-weight: 900;
+  color: #162015;
+}
+
+.summary-desc {
+  color: #8a8f98;
+  font-size: 0.85rem;
+}
+
+.summary-green .summary-icon,
+.summary-green::after {
+  background: #dff7e7;
+  color: #198754;
+}
+
+.summary-blue .summary-icon,
+.summary-blue::after {
+  background: #e3f0ff;
+  color: #0d6efd;
+}
+
+.summary-orange .summary-icon,
+.summary-orange::after {
+  background: #fff0dc;
+  color: #fd7e14;
+}
+
+.summary-red .summary-icon,
+.summary-red::after {
+  background: #ffe5e8;
+  color: #dc3545;
+}
+
+.filter-card,
+.table-card {
+  background: #fff;
+  border-radius: 24px;
+  border: 1px solid rgba(22, 32, 21, 0.08);
+  box-shadow: 0 12px 35px rgba(22, 32, 21, 0.07);
+}
+
+.filter-card {
+  padding: 1.25rem;
+}
+
+.form-label {
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: #3f493f;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+}
+
+.search-box .form-control {
+  padding-left: 2.6rem;
+}
+
+.form-control,
+.form-select {
+  border-radius: 14px;
+  min-height: 46px;
+  border-color: rgba(22, 32, 21, 0.12);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #2f8f46;
+  box-shadow: 0 0 0 0.2rem rgba(47, 143, 70, 0.13);
+}
+
+.table-card {
+  overflow: hidden;
+}
+
+.table-card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(22, 32, 21, 0.08);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.table-card-header h5 {
+  font-weight: 900;
+  color: #162015;
+}
+
+.table-card-header p {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.record-count {
+  background: #effaf2;
+  color: #198754;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.payroll-table thead th {
+  background: #f8faf8;
+  color: #536153;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(22, 32, 21, 0.08);
+  white-space: nowrap;
+}
+
+.payroll-table tbody td {
+  padding: 1rem;
+  color: #3f493f;
+  border-bottom: 1px solid rgba(22, 32, 21, 0.06);
+  white-space: nowrap;
+}
+
+.staff-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.staff-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #198754, #8cc63f);
+  color: #fff;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+
+.staff-info h6 {
+  font-weight: 900;
+  color: #162015;
+}
+
+.staff-info small {
+  color: #8a8f98;
+  font-weight: 700;
+}
+
+.attendance {
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+
+.attendance.present {
+  background: #e7f8ed;
+  color: #198754;
+}
+
+.attendance.absent {
+  background: #ffe8e8;
+  color: #dc3545;
+}
+
+.deduction {
+  color: #dc3545;
+  font-weight: 800;
+}
+
+.net-salary {
+  color: #198754;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.38rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.status-badge.paid {
+  background: #e7f8ed;
+  color: #198754;
+}
+
+.status-badge.pending {
+  background: #fff0dc;
+  color: #fd7e14;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.action-buttons .btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+}
+
+.empty-icon {
+  color: #adb5bd;
+}
+
+.payroll-modal {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.modal-content {
+  border: 0;
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  border-color: rgba(22, 32, 21, 0.08);
+}
+
+.modal-title {
+  font-weight: 900;
+}
+
+.payslip-box {
+  border: 1px solid rgba(22, 32, 21, 0.08);
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: #fbfdfb;
+}
+
+.payslip-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.payslip-header h4 {
+  font-weight: 900;
+  color: #162015;
+}
+
+.payslip-header p {
+  color: #6c757d;
+}
+
+.detail-item {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid rgba(22, 32, 21, 0.06);
+}
+
+.detail-item span {
+  display: block;
+  color: #8a8f98;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.detail-item strong {
+  color: #162015;
+}
+
+.salary-breakdown {
+  background: #fff;
+  border-radius: 18px;
+  padding: 1rem;
+  border: 1px solid rgba(22, 32, 21, 0.06);
+}
+
+.salary-breakdown h6 {
+  font-weight: 900;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed rgba(22, 32, 21, 0.12);
+}
+
+.breakdown-row:last-child {
+  border-bottom: 0;
+}
+
+.breakdown-row.total {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  border-radius: 16px;
+  background: #effaf2;
+  color: #198754;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+@media (max-width: 991px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media print {
+  .page-header,
+  .summary-card,
+  .filter-card,
+  .table-card,
+  .modal-header,
+  .modal-footer,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  .payroll-modal {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+  }
+
+  .modal-dialog {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .modal-content {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+
+  .modal-body {
+    padding: 0 !important;
+  }
+
+  .payslip-box {
+    border: 0;
+  }
+}
+</style>

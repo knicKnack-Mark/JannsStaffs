@@ -12,10 +12,9 @@ export const sidebarMenus = [
   },
 
   {
-    name: 'Inventory',
-    icon: 'solar:box-bold-duotone',
-    to: '/admin/inventory',
-    badge: 12,
+    name: 'Payroll Summary',
+    icon: 'solar:wallet-money-bold-duotone',
+    to: '/admin/payroll'
   },
 
   {

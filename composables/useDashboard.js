@@ -33,15 +33,109 @@ export const useDashboard = () => {
     }
   ])
 
-  const attendanceChart = ref([
-    85,
-    60,
-    92,
-    74,
-    98,
-    80,
-    95
-  ])
+const attendanceChart = ref({
+  weekly: {
+    labels: [
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun'
+    ],
+    present: [
+      51,
+      48,
+      54,
+      50,
+      56,
+      45,
+      52
+    ],
+    absent: [
+      7,
+      10,
+      4,
+      8,
+      2,
+      13,
+      6
+    ]
+  },
+
+  monthly: {
+    labels: [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ],
+    present: [
+      1320,
+      1280,
+      1405,
+      1388,
+      1450,
+      1422,
+      1508,
+      1490,
+      1442,
+      1510,
+      1535,
+      1580
+    ],
+    absent: [
+      135,
+      128,
+      112,
+      118,
+      95,
+      104,
+      88,
+      92,
+      110,
+      86,
+      80,
+      74
+    ]
+  },
+
+  yearly: {
+    labels: [
+      '2025',
+      '2026',
+      '2027',
+      '2028',
+      '2029',
+      '2030'
+    ],
+    present: [
+      14520,
+      15880,
+      16440,
+      17120,
+      17890,
+      18450
+    ],
+    absent: [
+      1260,
+      1040,
+      980,
+      920,
+      860,
+      790
+    ]
+  }
+})
 
   const activities = ref([
     {
