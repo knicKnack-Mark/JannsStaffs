@@ -20,30 +20,25 @@
     </section>
 
     <!-- TOOLBAR -->
-    <section class="staff-toolbar mb-4">
-      <div>
-        <h5 class="fw-bold mb-1">
-          Staff Directory
-        </h5>
+    <AdminPageToolbar
+      title="Staff Directory"
+      subtitle="View staff profiles, positions, salary type, and attendance status."
+    >
+      <template #actions>
+        <button
+          class="btn toolbar-btn toolbar-btn-primary"
+          type="button"
+          @click="openAddStaffModal"
+        >
+          <Icon
+            name="solar:user-plus-bold-duotone"
+            size="20"
+          />
 
-        <p class="text-muted mb-0">
-          View staff profiles, positions, salary type, and attendance status.
-        </p>
-      </div>
-
-      <button
-        class="btn add-staff-btn"
-        type="button"
-        @click="openAddStaffModal"
-      >
-        <Icon
-          name="solar:user-plus-bold-duotone"
-          size="20"
-        />
-
-        <span>Add Staff</span>
-      </button>
-    </section>
+          <span>Add Staff</span>
+        </button>
+      </template>
+    </AdminPageToolbar>
 
     <!-- FILTERS -->
     <section class="filter-card mb-4">
@@ -579,45 +574,6 @@ const toggleStatus = (staff) => {
 <style scoped>
 .staff-page {
   padding-bottom: 24px;
-}
-
-/* TOOLBAR */
-.staff-toolbar {
-  background: white;
-
-  border-radius: 26px;
-
-  padding: 22px 24px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
-}
-
-.add-staff-btn {
-  height: 48px;
-
-  border-radius: 16px;
-
-  padding: 0 18px;
-
-  background: linear-gradient(180deg, #0b5b54, #148b80);
-
-  color: white;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  border: none;
-}
-
-.add-staff-btn:hover {
-  color: white;
-  transform: translateY(-1px);
 }
 
 /* FILTER */

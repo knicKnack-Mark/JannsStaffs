@@ -1,7 +1,7 @@
 <template>
   <div class="payroll-page">
     <!-- PAGE HEADER -->
-    <section class="page-header mb-4">
+    <section class="page-header mb-4 ">
       <div class="header-actions">
         <button class="btn btn-light border action-btn">
           <Icon name="solar:printer-2-bold-duotone" size="20" />
