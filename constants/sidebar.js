@@ -23,13 +23,7 @@ export const sidebarMenus = [
     to: '/admin/attendance',
   },
 
-  {
-    name: 'Expenses',
-    icon: 'solar:wallet-money-bold-duotone',
-    to: '/admin/expenses',
-  },
-
-  {
+    {
     name: 'Reports',
     icon: 'solar:chart-2-bold-duotone',
     to: '/admin/reports',

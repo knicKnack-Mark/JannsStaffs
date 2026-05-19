@@ -1,60 +1,54 @@
 <template>
-  <section class="logs-card mt-4">
-    <div class="table-header">
-      <div>
-        <h5 class="fw-bold mb-1">
-          Recent Attendance Activity
-        </h5>
+  <section>
+    <div class="attendance-logs-card">
+      <div class="logs-header">
+        <div>
+          <h5>Attendance Activity Logs</h5>
+          <p>Latest actions made in today’s attendance.</p>
+        </div>
 
-        <p class="text-muted mb-0">
-          Latest attendance actions made today.
-        </p>
+        <span class="logs-count">
+          {{ logs.length }} log(s)
+        </span>
       </div>
 
-      <div class="logs-icon">
-        <Icon
-          name="solar:history-bold-duotone"
-          size="24"
-        />
-      </div>
-    </div>
-
-    <div
-      v-if="logs.length"
-      class="logs-list"
-    >
       <div
-        v-for="log in logs"
-        :key="log.id"
-        class="log-item"
+        v-if="logs.length"
+        class="logs-list"
       >
         <div
-          class="log-icon"
-          :class="log.color"
+          v-for="log in logs"
+          :key="log.id"
+          class="log-item"
         >
-          <Icon
-            :name="log.icon"
-            size="22"
-          />
-        </div>
+          <div
+            class="log-icon"
+            :class="getLogClass(log.type)"
+          >
+            <Icon
+              :name="getLogIcon(log.type)"
+              size="20"
+            />
+          </div>
 
-        <div>
-          <h6 class="fw-bold mb-0">
-            {{ log.title }}
-          </h6>
-
-          <small class="text-muted">
-            {{ log.time }}
-          </small>
+          <div>
+            <h6>{{ log.message }}</h6>
+            <span>{{ log.time }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div
-      v-else
-      class="empty-logs"
-    >
-      No recent attendance activity yet.
+      <div
+        v-else
+        class="empty-logs"
+      >
+        <Icon
+          name="solar:clipboard-list-bold-duotone"
+          size="44"
+        />
+        <h6>No activity logs yet</h6>
+        <p>Attendance actions will appear here.</p>
+      </div>
     </div>
   </section>
 </template>
@@ -66,94 +60,136 @@ defineProps({
     default: () => []
   }
 })
+
+const getLogClass = (type) => {
+  const classes = {
+    success: 'log-success',
+    danger: 'log-danger',
+    warning: 'log-warning',
+    info: 'log-info'
+  }
+
+  return classes[type] || 'log-info'
+}
+
+const getLogIcon = (type) => {
+  const icons = {
+    success: 'solar:check-circle-bold-duotone',
+    danger: 'solar:close-circle-bold-duotone',
+    warning: 'solar:danger-triangle-bold-duotone',
+    info: 'solar:info-circle-bold-duotone'
+  }
+
+  return icons[type] || 'solar:info-circle-bold-duotone'
+}
 </script>
 
 <style scoped>
-.logs-card {
-  background: white;
-  border-radius: 26px;
-  overflow: hidden;
-  padding-bottom: 6px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+.attendance-logs-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-.table-header {
-  padding: 22px 24px;
+.logs-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  border-bottom: 1px solid #eef2f7;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
-.logs-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: rgba(20, 139, 128, 0.12);
-  color: #148b80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.logs-header h5 {
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #182230;
+}
+
+.logs-header p {
+  margin-bottom: 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.logs-count {
+  background: #f2f4f7;
+  color: #344054;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
 }
 
 .logs-list {
-  padding: 0 24px 10px;
+  display: grid;
+  gap: 12px;
 }
 
 .log-item {
-  padding: 16px 0;
   display: flex;
-  align-items: center;
   gap: 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.log-item:last-child {
-  border-bottom: none;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .log-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
 }
 
-.log-icon.green {
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
+.log-success {
+  background: #dcfce7;
+  color: #15803d;
 }
 
-.log-icon.blue {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+.log-danger {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
-.log-icon.red {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+.log-warning {
+  background: #fef3c7;
+  color: #b45309;
 }
 
-.log-icon.orange {
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
+.log-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.log-item h6 {
+  margin-bottom: 4px;
+  font-weight: 800;
+  color: #182230;
+}
+
+.log-item span {
+  font-size: 13px;
+  color: #667085;
 }
 
 .empty-logs {
-  margin: 0 24px 20px;
-  padding: 18px;
-  border-radius: 18px;
-  background: #f4f8f7;
-  color: #64748b;
+  text-align: center;
+  padding: 36px 20px;
+  color: #98a2b3;
 }
 
-@media (max-width: 767px) {
-  .table-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+.empty-logs h6 {
+  margin-top: 12px;
+  font-weight: 800;
+  color: #344054;
+}
+
+.empty-logs p {
+  margin-bottom: 0;
+  color: #667085;
 }
 </style>

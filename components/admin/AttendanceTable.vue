@@ -1,186 +1,158 @@
 <template>
-  <section class="attendance-table-card">
-    <div class="table-header">
-      <div>
-        <h5 class="fw-bold mb-1">
-          Staff Attendance List
-        </h5>
+  <section class="mb-4">
+    <div class="attendance-table-card">
+      <div class="table-header">
+        <div>
+          <h5>Attendance Records</h5>
+          <p>
+            Records for {{ formattedDate }}
+          </p>
+        </div>
 
-        <p class="text-muted mb-0">
-          Showing attendance records for {{ formattedDate }}
-        </p>
+        <div class="record-count">
+          {{ attendance.length }} record(s)
+        </div>
       </div>
 
-      <span class="records-badge">
-        {{ attendance.length }} records
-      </span>
-    </div>
+      <div class="table-responsive">
+        <table class="table align-middle attendance-table">
+          <thead>
+            <tr>
+              <th>Staff</th>
+              <th>Department</th>
+              <th>Time In</th>
+              <th>Time Out</th>
+              <th>Rendered</th>
+              <th>Status</th>
+              <th>Remarks</th>
+              <th class="text-end">
+                Actions
+              </th>
+            </tr>
+          </thead>
 
-    <div class="table-responsive">
-      <table class="table attendance-table align-middle mb-0">
-        <thead>
-          <tr>
-            <th>Staff</th>
-            <th>Position</th>
-            <th>Time In</th>
-            <th>Time Out</th>
-            <th>Status</th>
-            <th>Rendered Hours</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr
-            v-for="staff in attendance"
-            :key="staff.id"
-          >
-            <td>
-              <div class="staff-info">
-                <div class="staff-avatar">
-                  {{ getInitials(staff.name) }}
-                </div>
-
-                <div>
-                  <h6 class="fw-bold mb-0">
-                    {{ staff.name }}
-                  </h6>
-
-                  <small class="text-muted">
-                    {{ staff.employeeId }}
-                  </small>
-                </div>
-              </div>
-            </td>
-
-            <td>{{ staff.position }}</td>
-
-            <td>
-              <span
-                v-if="staff.timeIn"
-                class="fw-semibold"
-              >
-                {{ staff.timeIn }}
-              </span>
-
-              <span
-                v-else
-                class="text-muted"
-              >
-                --
-              </span>
-            </td>
-
-            <td>
-              <span
-                v-if="staff.timeOut"
-                class="fw-semibold"
-              >
-                {{ staff.timeOut }}
-              </span>
-
-              <span
-                v-else
-                class="text-muted"
-              >
-                --
-              </span>
-            </td>
-
-            <td>
-              <span
-                class="attendance-badge"
-                :class="getStatusClass(staff.status)"
-              >
-                {{ staff.status }}
-              </span>
-            </td>
-
-            <td>
-              <span class="fw-bold">
-                {{ getRenderedHours(staff) }}
-              </span>
-            </td>
-
-            <td>
-              <div class="action-group">
-                <button
-                  class="btn action-btn time-in-btn"
-                  type="button"
-                  title="Time In"
-                  :disabled="isTimeInDisabled(staff)"
-                  @click="$emit('time-in', staff)"
-                >
-                  <Icon
-                    name="solar:login-3-bold-duotone"
-                    size="18"
-                  />
-                </button>
-
-                <button
-                  class="btn action-btn time-out-btn"
-                  type="button"
-                  title="Time Out"
-                  :disabled="isTimeOutDisabled(staff)"
-                  @click="$emit('time-out', staff)"
-                >
-                  <Icon
-                    name="solar:logout-3-bold-duotone"
-                    size="18"
-                  />
-                </button>
-
-                <button
-                  class="btn action-btn absent-btn"
-                  type="button"
-                  title="Mark Absent"
-                  :disabled="isAbsentDisabled(staff)"
-                  @click="$emit('mark-absent', staff)"
-                >
-                  <Icon
-                    name="solar:user-cross-bold-duotone"
-                    size="18"
-                  />
-                </button>
-
-                <button
-                  class="btn action-btn status-btn"
-                  type="button"
-                  :title="staff.isActive ? 'Set as Inactive' : 'Set as Active'"
-                  @click="$emit('toggle-status', staff)"
-                >
-                  <Icon
-                    :name="staff.isActive ? 'solar:user-block-bold-duotone' : 'solar:user-check-bold-duotone'"
-                    size="18"
-                  />
-                </button>
-              </div>
-            </td>
-          </tr>
-
-          <tr v-if="attendance.length === 0">
-            <td
-              colspan="7"
-              class="p-0"
+          <tbody>
+            <tr
+              v-for="item in attendance"
+              :key="item.id"
             >
-              <div class="empty-card">
+              <td>
+                <div class="staff-info">
+                  <div class="staff-avatar">
+                    {{ getInitials(item.name) }}
+                  </div>
+
+                  <div>
+                    <h6>{{ item.name }}</h6>
+                    <span>{{ item.position }}</span>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <span class="department-pill">
+                  {{ item.department }}
+                </span>
+              </td>
+
+              <td>
+                <strong>{{ formatTime(item.timeIn) }}</strong>
+              </td>
+
+              <td>
+                <strong>{{ formatTime(item.timeOut) }}</strong>
+              </td>
+
+              <td>
+                <span class="rendered-hours">
+                  {{ getRenderedHours(item) }}
+                </span>
+              </td>
+
+              <td>
+                <button
+                  class="status-badge border-0"
+                  :class="getStatusClass(item.status)"
+                  type="button"
+                  @click="$emit('toggleStatus', item)"
+                >
+                  {{ item.status }}
+                </button>
+              </td>
+
+              <td>
+                <input
+                  :value="item.remarks"
+                  type="text"
+                  class="form-control remarks-input"
+                  placeholder="Add remarks..."
+                  @change="$emit('updateRemarks', {
+                    item,
+                    remarks: $event.target.value
+                  })"
+                >
+              </td>
+
+              <td>
+                <div class="table-actions">
+                  <button
+                    class="btn action-btn action-success"
+                    type="button"
+                    :disabled="isTimeInDisabled(item)"
+                    @click="$emit('timeIn', item)"
+                  >
+                    <Icon
+                      name="solar:login-2-bold-duotone"
+                      size="18"
+                    />
+                    Time In
+                  </button>
+
+                  <button
+                    class="btn action-btn action-primary"
+                    type="button"
+                    :disabled="isTimeOutDisabled(item)"
+                    @click="$emit('timeOut', item)"
+                  >
+                    <Icon
+                      name="solar:logout-2-bold-duotone"
+                      size="18"
+                    />
+                    Time Out
+                  </button>
+
+                  <button
+                    class="btn action-btn action-danger"
+                    type="button"
+                    :disabled="isAbsentDisabled(item)"
+                    @click="$emit('markAbsent', item)"
+                  >
+                    <Icon
+                      name="solar:user-cross-bold-duotone"
+                      size="18"
+                    />
+                    Absent
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr v-if="!attendance.length">
+              <td
+                colspan="8"
+                class="empty-state"
+              >
                 <Icon
-                  name="solar:calendar-search-bold-duotone"
+                  name="solar:document-bold-duotone"
                   size="44"
                 />
-
-                <h5 class="fw-bold mt-3">
-                  No attendance found
-                </h5>
-
-                <p class="text-muted mb-0">
-                  Try changing your search or filter.
-                </p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <h6>No attendance records found</h6>
+                <p>Try changing your search or status filter.</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </section>
 </template>
@@ -193,7 +165,7 @@ defineProps({
   },
   formattedDate: {
     type: String,
-    default: 'Today'
+    default: ''
   },
   getInitials: {
     type: Function,
@@ -218,70 +190,98 @@ defineProps({
 })
 
 defineEmits([
-  'time-in',
-  'time-out',
-  'mark-absent',
-  'toggle-status'
+  'timeIn',
+  'timeOut',
+  'markAbsent',
+  'toggleStatus',
+  'updateRemarks'
 ])
 
+const formatTime = (time) => {
+  if (!time) return '--'
+
+  const [hours, minutes] = time.split(':')
+  const date = new Date()
+  date.setHours(Number(hours))
+  date.setMinutes(Number(minutes))
+
+  return date.toLocaleTimeString('en-PH', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
 const getStatusClass = (status) => {
-  switch (status) {
-    case 'Present':
-      return 'badge-green'
-    case 'No Time Out':
-      return 'badge-blue'
-    case 'Late':
-      return 'badge-orange'
-    case 'Absent':
-      return 'badge-red'
-    case 'Inactive':
-      return 'badge-gray'
-    default:
-      return 'badge-gray'
+  const classes = {
+    Pending: 'status-pending',
+    'On Time': 'status-success',
+    Late: 'status-warning',
+    Undertime: 'status-orange',
+    'Half Day': 'status-purple',
+    Absent: 'status-danger'
   }
+
+  return classes[status] || 'status-pending'
 }
 </script>
 
 <style scoped>
 .attendance-table-card {
-  background: white;
-  border-radius: 26px;
-  overflow: hidden;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
 .table-header {
-  padding: 22px 24px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  border-bottom: 1px solid #eef2f7;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
 }
 
-.records-badge {
-  padding: 10px 16px;
+.table-header h5 {
+  font-weight: 800;
+  margin-bottom: 4px;
+  color: #182230;
+}
+
+.table-header p {
+  margin-bottom: 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.record-count {
+  background: #f0fdf4;
+  color: #15803d;
+  font-weight: 800;
+  padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(20, 139, 128, 0.12);
-  color: #148b80;
   font-size: 13px;
-  font-weight: 900;
+}
+
+.attendance-table {
+  margin-bottom: 0;
 }
 
 .attendance-table thead th {
-  padding: 16px 20px;
   background: #f8fafc;
-  color: #334155;
+  color: #667085;
   font-size: 13px;
-  font-weight: 900;
-  text-transform: uppercase;
-  border-bottom: 1px solid #e2e8f0;
+  font-weight: 800;
+  border-bottom: 0;
+  padding: 14px;
   white-space: nowrap;
 }
 
 .attendance-table tbody td {
-  padding: 18px 20px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 16px 14px;
+  border-color: rgba(15, 23, 42, 0.06);
+  vertical-align: middle;
   white-space: nowrap;
 }
 
@@ -292,114 +292,148 @@ const getStatusClass = (status) => {
 }
 
 .staff-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
-  background: linear-gradient(180deg, #148b80, #0b5b54);
-  color: white;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #16a34a, #84cc16);
+  color: #ffffff;
   display: grid;
   place-items: center;
-  font-size: 14px;
   font-weight: 900;
-  flex: 0 0 auto;
+  letter-spacing: 0.5px;
 }
 
-.attendance-badge {
-  padding: 8px 14px;
+.staff-info h6 {
+  margin-bottom: 2px;
+  font-weight: 800;
+  color: #182230;
+}
+
+.staff-info span {
+  color: #667085;
+  font-size: 13px;
+}
+
+.department-pill {
+  background: #f2f4f7;
+  color: #344054;
+  font-weight: 700;
+  padding: 7px 12px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 13px;
 }
 
-.badge-green {
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
+.rendered-hours {
+  color: #101828;
+  font-weight: 800;
 }
 
-.badge-blue {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+.status-badge {
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.badge-red {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
+.status-pending {
+  background: #f2f4f7;
+  color: #475467;
 }
 
-.badge-orange {
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
+.status-success {
+  background: #dcfce7;
+  color: #15803d;
 }
 
-.badge-gray {
-  background: rgba(100, 116, 139, 0.12);
-  color: #64748b;
+.status-warning {
+  background: #fef3c7;
+  color: #b45309;
 }
 
-.action-group {
+.status-orange {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.status-purple {
+  background: #f3e8ff;
+  color: #7e22ce;
+}
+
+.status-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.remarks-input {
+  min-width: 180px;
+  border-radius: 12px;
+  border-color: rgba(15, 23, 42, 0.12);
+  font-size: 14px;
+}
+
+.remarks-input:focus {
+  border-color: #1f9d55;
+  box-shadow: 0 0 0 4px rgba(31, 157, 85, 0.12);
+}
+
+.table-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
 .action-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  border: 0;
+  padding: 8px 10px;
 }
 
-.time-in-btn {
-  background: rgba(20, 139, 128, 0.12);
-  color: #148b80;
+.action-success {
+  background: #dcfce7;
+  color: #15803d;
 }
 
-.time-out-btn {
-  background: rgba(59, 130, 246, 0.12);
-  color: #2563eb;
+.action-primary {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
-.absent-btn {
-  background: rgba(239, 68, 68, 0.12);
-  color: #ef4444;
-}
-
-.status-btn {
-  background: rgba(249, 115, 22, 0.12);
-  color: #f97316;
-}
-
-.action-btn:hover {
-  transform: translateY(-1px);
+.action-danger {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .action-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-.empty-card {
-  min-height: 260px;
-  background: white;
-  border-radius: 30px;
-  color: #148b80;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+.empty-state {
+  text-align: center;
+  padding: 48px 20px !important;
+  color: #98a2b3;
 }
 
-@media (max-width: 767px) {
-  .table-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+.empty-state h6 {
+  margin-top: 12px;
+  font-weight: 800;
+  color: #344054;
+}
 
-  .records-badge {
-    align-self: flex-start;
+.empty-state p {
+  margin-bottom: 0;
+  color: #667085;
+}
+
+@media (max-width: 1200px) {
+  .table-actions {
+    min-width: 320px;
   }
 }
 </style>

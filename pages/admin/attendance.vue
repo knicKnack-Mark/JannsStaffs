@@ -1,5 +1,32 @@
 <template>
   <div class="attendance-page">
+    <!-- TOP ACTIONS ONLY -->
+    <section class="attendance-top-actions mb-4">
+      <button
+        class="btn action-btn action-btn-light"
+        type="button"
+        @click="printAttendance"
+      >
+        <Icon
+          name="solar:printer-bold-duotone"
+          size="20"
+        />
+        <span>Print</span>
+      </button>
+
+      <button
+        class="btn action-btn action-btn-primary"
+        type="button"
+        @click="exportReport"
+      >
+        <Icon
+          name="solar:file-download-bold-duotone"
+          size="20"
+        />
+        <span>Export</span>
+      </button>
+    </section>
+
     <!-- SUMMARY CARDS -->
     <section class="mb-4">
       <div class="row g-4">
@@ -19,43 +46,14 @@
       </div>
     </section>
 
-    <AdminPageToolbar
-      title="Daily Attendance"
-      subtitle="Monitor staff time-in, time-out, absences, and rendered hours."
-    >
-      <template #actions>
-        <button
-          class="btn toolbar-btn toolbar-btn-light"
-          type="button"
-        >
-          <Icon
-            name="solar:printer-bold-duotone"
-            size="20"
-          />
-
-          <span>Print Attendance</span>
-        </button>
-
-        <button
-          class="btn toolbar-btn toolbar-btn-primary"
-          type="button"
-        >
-          <Icon
-            name="solar:file-download-bold-duotone"
-            size="20"
-          />
-
-          <span>Export Report</span>
-        </button>
-      </template>
-    </AdminPageToolbar>
-
+    <!-- FILTERS -->
     <AdminAttendanceFilters
       v-model:selected-date="selectedDate"
       v-model:search="search"
       v-model:selected-status="selectedStatus"
     />
 
+    <!-- TABLE -->
     <AdminAttendanceTable
       :attendance="filteredAttendance"
       :formatted-date="formattedSelectedDate"
@@ -68,8 +66,10 @@
       @time-out="timeOut"
       @mark-absent="markAbsent"
       @toggle-status="toggleStatus"
+      @update-remarks="updateRemarks"
     />
 
+    <!-- LOGS -->
     <AdminAttendanceLogs
       :logs="attendanceLogs"
     />
@@ -79,7 +79,7 @@
 <script setup>
 definePageMeta({
   title: 'Attendance',
-  subtitle: 'Monitor staff time-in, time-out, absences, and rendered hours'
+  subtitle: 'Manage daily staff attendance records'
 })
 
 const {
@@ -96,14 +96,70 @@ const {
   timeOut,
   markAbsent,
   toggleStatus,
+  updateRemarks,
   isTimeInDisabled,
   isTimeOutDisabled,
-  isAbsentDisabled
+  isAbsentDisabled,
+  printAttendance,
+  exportReport
 } = useAttendance()
 </script>
 
 <style scoped>
 .attendance-page {
   padding-bottom: 24px;
+}
+
+.attendance-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.action-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  padding: 0 18px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-btn-light {
+  background: #ffffff;
+  color: #344054;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.action-btn-light:hover {
+  background: #f8fafc;
+  color: #101828;
+}
+
+.action-btn-primary {
+  background: #0f766e;
+  color: #ffffff;
+  border: 1px solid #0f766e;
+  box-shadow: 0 8px 22px rgba(15, 118, 110, 0.22);
+}
+
+.action-btn-primary:hover {
+  background: #115e59;
+  border-color: #115e59;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .attendance-top-actions {
+    width: 100%;
+  }
+
+  .attendance-top-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
 }
 </style>
