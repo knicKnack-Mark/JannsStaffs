@@ -206,8 +206,8 @@ const getDefaultForm = () => ({
   position: '',
   phone: '',
   salaryType: 'Monthly',
-  monthlySalary: 0,
-  dailyRate: 0,
+  monthlySalary: '',
+  dailyRate:'',
   status: 'Active',
   avatar: 5
 })
