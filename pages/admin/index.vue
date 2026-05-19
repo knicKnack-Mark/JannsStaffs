@@ -62,10 +62,6 @@
         <div class="col-xl-6 fade-slide-up delay-9">
           <AdminDepartmentOverview />
         </div>
-
-        <div class="col-xl-6 fade-slide-up delay-10">
-          <AdminQuickStats />
-        </div>
       </div>
     </section>
   </div>
