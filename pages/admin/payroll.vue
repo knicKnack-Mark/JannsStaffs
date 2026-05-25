@@ -1,9 +1,12 @@
 <template>
-  <div class="payroll-page">
+  <div class="payroll-page" :class="`print-${printMode}`">
     <!-- PAGE HEADER -->
-    <section class="page-header mb-4 ">
+    <section class="page-header mb-4">
       <div class="header-actions">
-        <button class="btn btn-light border action-btn">
+        <button
+          class="btn btn-light border action-btn"
+          @click="printPayrollSummary"
+        >
           <Icon name="solar:printer-2-bold-duotone" size="20" />
           Print Payroll
         </button>
@@ -129,6 +132,7 @@
                   <div class="staff-avatar">
                     {{ getInitials(staff.name) }}
                   </div>
+
                   <div>
                     <h6 class="mb-0">{{ staff.name }}</h6>
                     <small>{{ staff.employeeId }}</small>
@@ -214,7 +218,9 @@
                   size="48"
                   class="empty-icon mb-2"
                 />
+
                 <h6 class="mb-1">No payroll records found</h6>
+
                 <p class="mb-0 text-muted">
                   Try changing your search or filter.
                 </p>
@@ -222,6 +228,117 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- PRINT PAYROLL SUMMARY -->
+    <section class="print-payroll-summary">
+      <div
+        v-for="(group, groupIndex) in payrollPrintGroups"
+        :key="groupIndex"
+        class="print-page"
+      >
+        <div class="print-summary-header">
+          <div>
+            <h2>JANNS SPRING RESORT</h2>
+            <p>Staff Payroll Summary</p>
+          </div>
+
+          <div class="print-summary-meta">
+            <strong>{{ selectedMonth }}</strong>
+            <span>{{ group.length }} staff record/s</span>
+          </div>
+        </div>
+
+        <div class="print-summary-stats">
+          <div>
+            <span>Total Gross</span>
+            <strong>{{ formatPeso(getGroupTotal(group, 'grossSalary')) }}</strong>
+          </div>
+
+          <div>
+            <span>Total Deductions</span>
+            <strong>{{ formatPeso(getGroupTotal(group, 'deductions')) }}</strong>
+          </div>
+
+          <div>
+            <span>Total Net Payroll</span>
+            <strong>{{ formatPeso(getGroupTotal(group, 'netSalary')) }}</strong>
+          </div>
+        </div>
+
+        <div class="print-payroll-grid">
+          <div
+            v-for="staff in group"
+            :key="staff.id"
+            class="print-payroll-card"
+          >
+            <div class="print-card-top">
+              <div class="print-avatar">
+                {{ getInitials(staff.name) }}
+              </div>
+
+              <div>
+                <h5>{{ staff.name }}</h5>
+                <p>{{ staff.employeeId }}</p>
+              </div>
+
+              <span
+                class="print-status"
+                :class="staff.status.toLowerCase()"
+              >
+                {{ staff.status }}
+              </span>
+            </div>
+
+            <div class="print-detail">
+              <span>Position</span>
+              <strong>{{ staff.position }}</strong>
+            </div>
+
+            <div class="print-detail">
+              <span>Base Salary / Rate</span>
+              <strong>{{ formatPeso(staff.salary) }}</strong>
+            </div>
+
+            <div class="print-attendance-row">
+              <div>
+                <span>Present</span>
+                <strong>{{ staff.presentDays }} days</strong>
+              </div>
+
+              <div>
+                <span>Absent</span>
+                <strong>{{ staff.absentDays }} days</strong>
+              </div>
+            </div>
+
+            <div class="print-money-row">
+              <span>Gross Salary</span>
+              <strong>{{ formatPeso(staff.grossSalary) }}</strong>
+            </div>
+
+            <div class="print-money-row deduction-text">
+              <span>Deductions</span>
+              <strong>-{{ formatPeso(staff.deductions) }}</strong>
+            </div>
+
+            <div class="print-net-row">
+              <span>Net Salary</span>
+              <strong>{{ formatPeso(staff.netSalary) }}</strong>
+            </div>
+
+            <div class="print-signature-row">
+              <div>
+                <span>Prepared by</span>
+              </div>
+
+              <div>
+                <span>Received by</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -360,7 +477,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 
 definePageMeta({
   title: 'Payroll Summary',
@@ -372,6 +489,7 @@ const selectedMonth = ref('May 2026')
 const selectedStatus = ref('All')
 const selectedPosition = ref('All')
 const selectedStaff = ref(null)
+const printMode = ref('none')
 
 const payroll = ref([
   {
@@ -433,6 +551,42 @@ const payroll = ref([
     grossSalary: 17000,
     deductions: 0,
     status: 'Paid'
+  },
+  {
+    id: 6,
+    employeeId: 'JNS-006',
+    name: 'Mark Rivera',
+    position: 'Security',
+    salary: 15500,
+    presentDays: 24,
+    absentDays: 2,
+    grossSalary: 15500,
+    deductions: 900,
+    status: 'Pending'
+  },
+  {
+    id: 7,
+    employeeId: 'JNS-007',
+    name: 'Liza Garcia',
+    position: 'Cook',
+    salary: 16500,
+    presentDays: 25,
+    absentDays: 1,
+    grossSalary: 16500,
+    deductions: 600,
+    status: 'Paid'
+  },
+  {
+    id: 8,
+    employeeId: 'JNS-008',
+    name: 'Ramon Flores',
+    position: 'Gardener',
+    salary: 13500,
+    presentDays: 23,
+    absentDays: 3,
+    grossSalary: 13500,
+    deductions: 1000,
+    status: 'Pending'
   }
 ])
 
@@ -465,6 +619,16 @@ const filteredPayroll = computed(() => {
 
     return matchesSearch && matchesStatus && matchesPosition
   })
+})
+
+const payrollPrintGroups = computed(() => {
+  const groups = []
+
+  for (let index = 0; index < filteredPayroll.value.length; index += 8) {
+    groups.push(filteredPayroll.value.slice(index, index + 8))
+  }
+
+  return groups
 })
 
 const totalGrossSalary = computed(() => {
@@ -541,6 +705,12 @@ const getInitials = (name) => {
     .toUpperCase()
 }
 
+const getGroupTotal = (group, field) => {
+  return group.reduce((total, staff) => {
+    return total + staff[field]
+  }, 0)
+}
+
 const openPayslip = (staff) => {
   selectedStaff.value = staff
 }
@@ -553,10 +723,53 @@ const markAsPaid = (id) => {
   }
 }
 
-const printPayslip = (staff) => {
-  selectedStaff.value = staff
-  window.print()
+const resetPrintMode = () => {
+  printMode.value = 'none'
+
+  if (process.client) {
+    document.body.classList.remove('printing-payroll-summary')
+    document.body.classList.remove('printing-payslip')
+  }
 }
+
+const printPayrollSummary = async () => {
+  selectedStaff.value = null
+  printMode.value = 'summary'
+
+  await nextTick()
+
+  if (process.client) {
+    document.body.classList.add('printing-payroll-summary')
+  }
+
+  setTimeout(() => {
+    window.print()
+  }, 150)
+}
+
+const printPayslip = async (staff) => {
+  selectedStaff.value = staff
+  printMode.value = 'payslip'
+
+  await nextTick()
+
+  if (process.client) {
+    document.body.classList.add('printing-payslip')
+  }
+
+  setTimeout(() => {
+    window.print()
+  }, 150)
+}
+
+onMounted(() => {
+  window.addEventListener('afterprint', resetPrintMode)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('afterprint', resetPrintMode)
+  resetPrintMode()
+})
 </script>
 
 <style scoped>
@@ -976,6 +1189,10 @@ const printPayslip = (staff) => {
   font-weight: 900;
 }
 
+.print-payroll-summary {
+  display: none;
+}
+
 @media (max-width: 991px) {
   .page-header {
     align-items: flex-start;
@@ -991,40 +1208,308 @@ const printPayslip = (staff) => {
     justify-content: center;
   }
 }
+</style>
 
+<style>
 @media print {
-  .page-header,
-  .summary-card,
-  .filter-card,
-  .table-card,
-  .modal-header,
-  .modal-footer,
-  .modal-backdrop {
-    display: none !important;
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
   }
 
-  .payroll-modal {
-    position: static !important;
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.printing-payroll-summary * {
+    visibility: hidden !important;
+  }
+
+  body.printing-payroll-summary .print-payroll-summary,
+  body.printing-payroll-summary .print-payroll-summary * {
+    visibility: visible !important;
+  }
+
+  body.printing-payroll-summary .print-payroll-summary {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    z-index: 999999 !important;
+  }
+
+  body.printing-payroll-summary .print-page {
+    min-height: 277mm;
+    page-break-after: always;
+    background: #ffffff !important;
+  }
+
+  body.printing-payroll-summary .print-page:last-child {
+    page-break-after: auto;
+  }
+
+  body.printing-payroll-summary .print-summary-header {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #198754;
+    margin-bottom: 8px;
+  }
+
+  body.printing-payroll-summary .print-summary-header h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: #162015;
+  }
+
+  body.printing-payroll-summary .print-summary-header p {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #536153;
+    font-weight: 700;
+  }
+
+  body.printing-payroll-summary .print-summary-meta {
+    text-align: right;
+  }
+
+  body.printing-payroll-summary .print-summary-meta strong {
+    display: block;
+    font-size: 12px;
+    color: #162015;
+  }
+
+  body.printing-payroll-summary .print-summary-meta span {
+    display: block;
+    font-size: 10px;
+    color: #6c757d;
+  }
+
+  body.printing-payroll-summary .print-summary-stats {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  body.printing-payroll-summary .print-summary-stats div {
+    border: 1px solid rgba(22, 32, 21, 0.12);
+    border-radius: 9px;
+    padding: 6px 8px;
+    background: #f8faf8 !important;
+  }
+
+  body.printing-payroll-summary .print-summary-stats span {
+    display: block;
+    font-size: 8px;
+    color: #6c757d;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  body.printing-payroll-summary .print-summary-stats strong {
+    display: block;
+    font-size: 11px;
+    color: #162015;
+    margin-top: 2px;
+  }
+
+  body.printing-payroll-summary .print-payroll-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  body.printing-payroll-summary .print-payroll-card {
+    min-height: 58mm;
+    border: 1px solid rgba(22, 32, 21, 0.14);
+    border-radius: 10px;
+    padding: 8px;
+    background: #ffffff !important;
+    break-inside: avoid;
+  }
+
+  body.printing-payroll-summary .print-card-top {
+    display: grid !important;
+    grid-template-columns: 30px 1fr auto;
+    gap: 6px;
+    align-items: center;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed rgba(22, 32, 21, 0.16);
+    margin-bottom: 6px;
+  }
+
+  body.printing-payroll-summary .print-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #198754, #8cc63f) !important;
+    color: #ffffff !important;
+    font-weight: 900;
+    font-size: 10px;
+    display: grid !important;
+    place-items: center;
+  }
+
+  body.printing-payroll-summary .print-card-top h5 {
+    margin: 0;
+    color: #162015;
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  body.printing-payroll-summary .print-card-top p {
+    margin: 1px 0 0;
+    color: #6c757d;
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  body.printing-payroll-summary .print-status {
+    border-radius: 999px;
+    padding: 3px 6px;
+    font-size: 7px;
+    font-weight: 900;
+  }
+
+  body.printing-payroll-summary .print-status.paid {
+    background: #e7f8ed !important;
+    color: #198754 !important;
+  }
+
+  body.printing-payroll-summary .print-status.pending {
+    background: #fff0dc !important;
+    color: #fd7e14 !important;
+  }
+
+  body.printing-payroll-summary .print-detail,
+  body.printing-payroll-summary .print-money-row,
+  body.printing-payroll-summary .print-net-row {
+    display: flex !important;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 3px 0;
+    font-size: 9px;
+  }
+
+  body.printing-payroll-summary .print-detail span,
+  body.printing-payroll-summary .print-money-row span,
+  body.printing-payroll-summary .print-net-row span,
+  body.printing-payroll-summary .print-attendance-row span {
+    color: #6c757d;
+    font-weight: 700;
+  }
+
+  body.printing-payroll-summary .print-detail strong,
+  body.printing-payroll-summary .print-money-row strong,
+  body.printing-payroll-summary .print-net-row strong,
+  body.printing-payroll-summary .print-attendance-row strong {
+    color: #162015;
+    font-weight: 900;
+  }
+
+  body.printing-payroll-summary .print-attendance-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+    margin: 4px 0;
+  }
+
+  body.printing-payroll-summary .print-attendance-row div {
+    border-radius: 7px;
+    background: #f8faf8 !important;
+    padding: 4px;
+  }
+
+  body.printing-payroll-summary .print-attendance-row span,
+  body.printing-payroll-summary .print-attendance-row strong {
+    display: block;
+    font-size: 8px;
+  }
+
+  body.printing-payroll-summary .deduction-text strong {
+    color: #dc3545 !important;
+  }
+
+  body.printing-payroll-summary .print-net-row {
+    margin-top: 4px;
+    padding: 6px;
+    border-radius: 8px;
+    background: #effaf2 !important;
+  }
+
+  body.printing-payroll-summary .print-net-row span,
+  body.printing-payroll-summary .print-net-row strong {
+    color: #198754 !important;
+    font-size: 10px;
+  }
+
+  body.printing-payroll-summary .print-signature-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 9px;
+  }
+
+  body.printing-payroll-summary .print-signature-row div {
+    border-top: 1px solid #162015;
+    padding-top: 3px;
+    text-align: center;
+  }
+
+  body.printing-payroll-summary .print-signature-row span {
+    font-size: 7px;
+    color: #6c757d;
+    font-weight: 700;
+  }
+
+  body.printing-payslip * {
+    visibility: hidden !important;
+  }
+
+  body.printing-payslip .payroll-modal,
+  body.printing-payslip .payroll-modal * {
+    visibility: visible !important;
+  }
+
+  body.printing-payslip .payroll-modal {
+    position: absolute !important;
     display: block !important;
     background: transparent !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
   }
 
-  .modal-dialog {
+  body.printing-payslip .modal-dialog {
     max-width: 100% !important;
     margin: 0 !important;
   }
 
-  .modal-content {
+  body.printing-payslip .modal-content {
     box-shadow: none !important;
     border: 0 !important;
   }
 
-  .modal-body {
+  body.printing-payslip .modal-body {
     padding: 0 !important;
   }
 
-  .payslip-box {
-    border: 0;
+  body.printing-payslip .modal-header,
+  body.printing-payslip .modal-footer,
+  body.printing-payslip .modal-backdrop {
+    display: none !important;
+  }
+
+  body.printing-payslip .payslip-box {
+    border: 0 !important;
   }
 }
 </style>

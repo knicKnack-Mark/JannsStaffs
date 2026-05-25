@@ -23,11 +23,11 @@ export const sidebarMenus = [
     to: '/admin/attendance',
   },
 
-  // {
-  //   name: 'Reports',
-  //   icon: 'solar:chart-2-bold-duotone',
-  //   to: '/admin/reports',
-  // },
+  {
+    name: 'Manual Attendance',
+    icon: 'solar:checklist-minimalistic-bold-duotone',
+    to: '/admin/manual-attendance',
+  },
 
   {
     name: 'Settings',

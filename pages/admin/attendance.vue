@@ -1,32 +1,5 @@
 <template>
   <div class="attendance-page">
-    <!-- TOP ACTIONS ONLY -->
-    <section class="attendance-top-actions mb-4">
-      <button
-        class="btn action-btn action-btn-light"
-        type="button"
-        @click="printAttendance"
-      >
-        <Icon
-          name="solar:printer-bold-duotone"
-          size="20"
-        />
-        <span>Print</span>
-      </button>
-
-      <button
-        class="btn action-btn action-btn-primary"
-        type="button"
-        @click="exportReport"
-      >
-        <Icon
-          name="solar:file-download-bold-duotone"
-          size="20"
-        />
-        <span>Export</span>
-      </button>
-    </section>
-
     <!-- SUMMARY CARDS -->
     <section class="mb-4">
       <div class="row g-4">
@@ -46,12 +19,38 @@
       </div>
     </section>
 
-    <!-- FILTERS -->
+    <!-- FILTERS WITH ACTION BUTTONS -->
     <AdminAttendanceFilters
       v-model:selected-date="selectedDate"
       v-model:search="search"
       v-model:selected-status="selectedStatus"
-    />
+    >
+      <template #actions>
+        <button
+          class="btn action-btn action-btn-light"
+          type="button"
+          @click="printAttendance"
+        >
+          <Icon
+            name="solar:printer-bold-duotone"
+            size="20"
+          />
+          <span>Print</span>
+        </button>
+
+        <button
+          class="btn action-btn action-btn-primary"
+          type="button"
+          @click="exportReport"
+        >
+          <Icon
+            name="solar:file-download-bold-duotone"
+            size="20"
+          />
+          <span>Export</span>
+        </button>
+      </template>
+    </AdminAttendanceFilters>
 
     <!-- TABLE -->
     <AdminAttendanceTable
@@ -110,21 +109,16 @@ const {
   padding-bottom: 24px;
 }
 
-.attendance-top-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
 .action-btn {
-  min-height: 48px;
+  min-height: 46px;
   border-radius: 16px;
   padding: 0 18px;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  white-space: nowrap;
 }
 
 .action-btn-light {
@@ -153,13 +147,8 @@ const {
 }
 
 @media (max-width: 768px) {
-  .attendance-top-actions {
-    width: 100%;
-  }
-
-  .attendance-top-actions .btn {
+  .action-btn {
     flex: 1;
-    justify-content: center;
   }
 }
 </style>

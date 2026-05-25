@@ -1,97 +1,77 @@
 <template>
-  <section class="mb-4">
-    <div class="attendance-filter-card">
-      <div class="row g-3">
-        <!-- DATE -->
-        <div class="col-12 col-lg-4">
-          <label class="form-label">
-            Attendance Date
-          </label>
+  <section class="attendance-filters mb-4">
+    <div class="filters-card">
+<div class="filters-main">
+  <!-- SEARCH -->
+  <div class="filter-field search-field">
+    <label>Search Staff</label>
 
-          <div class="filter-input">
-            <span class="filter-icon">
-              <Icon
-                name="solar:calendar-bold-duotone"
-                size="20"
-              />
-            </span>
+    <div class="input-icon-wrap">
+      <Icon
+        name="solar:magnifer-bold-duotone"
+        size="20"
+        class="field-icon"
+      />
 
-            <input
-              :value="selectedDate"
-              type="date"
-              class="form-control"
-              @input="$emit('update:selectedDate', $event.target.value)"
-            >
-          </div>
-        </div>
+      <input
+        :value="search"
+        type="text"
+        class="form-control filter-control"
+        placeholder="Search staff name..."
+        @input="$emit('update:search', $event.target.value)"
+      >
+    </div>
+  </div>
 
-        <!-- SEARCH -->
-        <div class="col-12 col-lg-4">
-          <label class="form-label">
-            Search Staff
-          </label>
+  <!-- DATE -->
+  <div class="filter-field date-field">
+    <label>Attendance Date</label>
 
-          <div class="filter-input">
-            <span class="filter-icon">
-              <Icon
-                name="solar:magnifer-bold-duotone"
-                size="20"
-              />
-            </span>
+    <div class="input-icon-wrap">
+      <Icon
+        name="solar:calendar-bold-duotone"
+        size="20"
+        class="field-icon"
+      />
 
-            <input
-              :value="search"
-              type="text"
-              class="form-control"
-              placeholder="Search name, position, department..."
-              @input="$emit('update:search', $event.target.value)"
-            >
-          </div>
-        </div>
+      <input
+        :value="selectedDate"
+        type="date"
+        class="form-control filter-control"
+        @input="$emit('update:selectedDate', $event.target.value)"
+      >
+    </div>
+  </div>
 
-        <!-- STATUS -->
-        <div class="col-12 col-lg-4">
-          <label class="form-label">
-            Status
-          </label>
+  <!-- STATUS -->
+  <div class="filter-field status-field">
+    <label>Status</label>
 
-          <div class="filter-input">
-            <span class="filter-icon">
-              <Icon
-                name="solar:filter-bold-duotone"
-                size="20"
-              />
-            </span>
+    <div class="input-icon-wrap">
+      <Icon
+        name="solar:filter-bold-duotone"
+        size="20"
+        class="field-icon"
+      />
 
-            <select
-              :value="selectedStatus"
-              class="form-select"
-              @change="$emit('update:selectedStatus', $event.target.value)"
-            >
-              <option value="All">
-                All Status
-              </option>
-              <option value="Pending">
-                Pending
-              </option>
-              <option value="On Time">
-                On Time
-              </option>
-              <option value="Late">
-                Late
-              </option>
-              <option value="Undertime">
-                Undertime
-              </option>
-              <option value="Half Day">
-                Half Day
-              </option>
-              <option value="Absent">
-                Absent
-              </option>
-            </select>
-          </div>
-        </div>
+      <select
+        :value="selectedStatus"
+        class="form-select filter-control"
+        @change="$emit('update:selectedStatus', $event.target.value)"
+      >
+        <option value="All">All Status</option>
+        <option value="Present">Present</option>
+        <option value="Late">Late</option>
+        <option value="Absent">Absent</option>
+        <option value="Half Day">Half Day</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+      <!-- PRINT / EXPORT BUTTONS FROM attendance.vue -->
+      <div class="filters-actions">
+        <slot name="actions" />
       </div>
     </div>
   </section>
@@ -121,73 +101,127 @@ defineEmits([
 </script>
 
 <style scoped>
-.attendance-filter-card {
-  background: #ffffff;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 22px;
-  padding: 22px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-}
-
-.form-label {
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #182230;
-}
-
-.filter-input {
-  position: relative;
+.attendance-filters {
   width: 100%;
 }
 
-.filter-icon {
+.filters-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.filters-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(420px, 2fr) minmax(280px, 1.2fr) 220px;
+  gap: 14px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-field label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #475467;
+}
+
+.input-icon-wrap {
+  position: relative;
+}
+
+.field-icon {
   position: absolute;
+  left: 15px;
   top: 50%;
-  left: 16px;
-  z-index: 3;
   transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  color: #667085;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  color: #64748b;
   pointer-events: none;
 }
 
-.filter-input .form-control,
-.filter-input .form-select {
-  width: 100%;
-  min-height: 52px;
+.filter-control {
+  min-height: 46px;
   border-radius: 16px;
   border: 1px solid rgba(15, 23, 42, 0.12);
-  padding-left: 50px;
-  padding-right: 18px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #182230;
-  background-color: #ffffff;
+  padding-left: 44px;
+  font-weight: 700;
+  color: #344054;
+  box-shadow: none;
 }
 
-.filter-input .form-select {
-  cursor: pointer;
+.filter-control:focus {
+  border-color: rgba(15, 118, 110, 0.45);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
 }
 
-.filter-input .form-control::placeholder {
-  color: #667085;
-  font-weight: 500;
+.filters-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
-.filter-input .form-control:focus,
-.filter-input .form-select:focus {
-  border-color: #0f766e;
-  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+.search-field {
+  width: 100%;
 }
 
-@media (max-width: 991px) {
-  .attendance-filter-card {
-    padding: 18px;
+.search-field .input-icon-wrap,
+.search-field .filter-control {
+  width: 100%;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1200px) {
+  .filters-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .filters-main {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .filters-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 992px) {
+  .filters-main {
+    grid-template-columns: 1fr;
+  }
+
+  .filters-actions {
+    width: 100%;
+  }
+
+  .filters-actions :deep(.btn) {
+    flex: 1;
+  }
+}
+
+@media (max-width: 576px) {
+  .filters-card {
+    border-radius: 20px;
+    padding: 14px;
+  }
+
+  .filters-actions {
+    flex-direction: column;
+  }
+
+  .filters-actions :deep(.btn) {
+    width: 100%;
   }
 }
 </style>
