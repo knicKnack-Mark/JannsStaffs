@@ -13,7 +13,7 @@
         <div>
           <div class="d-flex align-items-center gap-3 mb-4">
             <div class="logo-wrapper">
-              <Icon name="solar:palms-bold-duotone" size="34" />
+              <img src="/public/JANNS_logo.jpg" alt="JANNS SPRING RESORT logo" class="logo-img" />
             </div>
 
             <div>
@@ -177,7 +177,7 @@
           </div>
 
           <button type="submit" class="login-btn w-100">
-            <span>Access Admin Dashboard</span>
+            <span>Login</span>
 
             <Icon
               name="solar:arrow-right-up-bold"
@@ -292,6 +292,13 @@ onMounted(() => {
 .brand-subtitle {
   color: rgba(255,255,255,0.75);
   font-size: 0.95rem;
+}
+
+.logo-img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .system-badge {
