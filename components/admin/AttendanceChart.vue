@@ -12,7 +12,6 @@
       </div>
 
       <div class="attendance-actions">
-        <!-- LEGENDS -->
         <div class="legend-wrapper">
           <div class="legend-item">
             <span class="legend-dot present"></span>
@@ -26,7 +25,6 @@
         </div>
 
         <div class="select-wrapper">
-          <!-- RANGE SELECT -->
           <select
             v-model="selectedRange"
             class="form-select control-select"
@@ -44,7 +42,6 @@
             </option>
           </select>
 
-          <!-- CHART TYPE SELECT -->
           <select
             v-model="selectedChartType"
             class="form-select control-select"
@@ -71,6 +68,7 @@
           :key="chartRenderKey"
           :data="chartData"
           :options="chartOptions"
+          :plugins="[lineRevealPlugin]"
         />
 
         <Bar
@@ -147,15 +145,84 @@ const chartSubtitle = computed(() => {
   return `${rangeLabel[selectedRange.value]} staff attendance performance shown as ${typeLabel}`
 })
 
-const getAnimationDelay = (ctx) => {
-  if (ctx.type !== 'data') {
-    return 0
+const easeOutCubic = (value) => {
+  return 1 - Math.pow(1 - value, 3)
+}
+
+const lineRevealPlugin = {
+  id: 'lineRevealPlugin',
+
+  afterInit(chart) {
+    const options = chart.options.plugins.lineRevealPlugin
+
+    if (!options?.enabled) {
+      return
+    }
+
+    chart.$revealProgress = 0
+    chart.$revealStartTime = null
+
+    const animate = (timestamp) => {
+      if (!chart.$revealStartTime) {
+        chart.$revealStartTime = timestamp
+      }
+
+      const elapsed = timestamp - chart.$revealStartTime
+      const rawProgress = Math.min(elapsed / options.duration, 1)
+
+      chart.$revealProgress = easeOutCubic(rawProgress)
+      chart.draw()
+
+      if (rawProgress < 1) {
+        chart.$revealFrame = requestAnimationFrame(animate)
+      }
+    }
+
+    chart.$revealFrame = requestAnimationFrame(animate)
+  },
+
+  beforeDatasetsDraw(chart) {
+    const options = chart.options.plugins.lineRevealPlugin
+
+    if (!options?.enabled) {
+      return
+    }
+
+    const { ctx, chartArea } = chart
+
+    if (!chartArea) {
+      return
+    }
+
+    const progress = chart.$revealProgress || 0
+    const revealWidth = (chartArea.right - chartArea.left) * progress
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(
+      chartArea.left,
+      chartArea.top - 20,
+      revealWidth,
+      chartArea.bottom - chartArea.top + 40
+    )
+    ctx.clip()
+  },
+
+  afterDatasetsDraw(chart) {
+    const options = chart.options.plugins.lineRevealPlugin
+
+    if (!options?.enabled) {
+      return
+    }
+
+    chart.ctx.restore()
+  },
+
+  afterDestroy(chart) {
+    if (chart.$revealFrame) {
+      cancelAnimationFrame(chart.$revealFrame)
+    }
   }
-
-  const baseDelay = selectedRange.value === 'yearly' ? 95 : 80
-  const datasetDelay = ctx.datasetIndex * 120
-
-  return ctx.dataIndex * baseDelay + datasetDelay
 }
 
 const chartData = computed(() => {
@@ -171,7 +238,7 @@ const chartData = computed(() => {
         data: currentChart.value.present,
         borderColor: '#148b80',
         backgroundColor: isLine
-          ? 'rgba(20,139,128,0.12)'
+          ? 'rgba(20,139,128,0.10)'
           : 'rgba(20,139,128,0.78)',
         fill: isLine,
         tension: isLine ? 0.45 : 0,
@@ -179,8 +246,11 @@ const chartData = computed(() => {
         pointBackgroundColor: '#148b80',
         pointBorderColor: '#ffffff',
         pointBorderWidth: isLine ? 3 : 0,
-        pointRadius: isLine ? 6 : 0,
+        pointRadius: isLine ? 5 : 0,
         pointHoverRadius: isLine ? 8 : 0,
+        pointHitRadius: 18,
+        borderCapStyle: 'round',
+        borderJoinStyle: 'round',
         borderRadius: isLine ? 0 : 14,
         barThickness: selectedRange.value === 'weekly' ? 28 : 18,
         categoryPercentage: 0.72,
@@ -192,7 +262,7 @@ const chartData = computed(() => {
         data: currentChart.value.absent,
         borderColor: '#ef4444',
         backgroundColor: isLine
-          ? 'rgba(239,68,68,0.10)'
+          ? 'rgba(239,68,68,0.08)'
           : 'rgba(239,68,68,0.78)',
         fill: isLine,
         tension: isLine ? 0.45 : 0,
@@ -200,8 +270,11 @@ const chartData = computed(() => {
         pointBackgroundColor: '#ef4444',
         pointBorderColor: '#ffffff',
         pointBorderWidth: isLine ? 3 : 0,
-        pointRadius: isLine ? 6 : 0,
+        pointRadius: isLine ? 5 : 0,
         pointHoverRadius: isLine ? 8 : 0,
+        pointHitRadius: 18,
+        borderCapStyle: 'round',
+        borderJoinStyle: 'round',
         borderRadius: isLine ? 0 : 14,
         barThickness: selectedRange.value === 'weekly' ? 28 : 18,
         categoryPercentage: 0.72,
@@ -218,72 +291,29 @@ const chartOptions = computed(() => {
     responsive: true,
     maintainAspectRatio: false,
 
-    animation: {
-      duration: 950,
-      easing: 'easeOutCubic'
-    },
+    animation: isLine
+      ? false
+      : {
+          duration: 850,
+          easing: 'easeOutCubic'
+        },
 
-    animations: {
-      x: {
-        type: 'number',
-        easing: 'easeOutCubic',
-        duration: 900,
-        from(ctx) {
-          if (isLine) {
-            const chartArea = ctx.chart.chartArea
+    animations: isLine
+      ? {}
+      : {
+          y: {
+            type: 'number',
+            duration: 850,
+            easing: 'easeOutCubic',
+            from(ctx) {
+              if (ctx.type === 'data') {
+                return ctx.chart.scales.y.getPixelForValue(0)
+              }
 
-            if (!chartArea) {
               return undefined
             }
-
-            return chartArea.left
           }
-
-          return undefined
         },
-        delay: getAnimationDelay
-      },
-
-      y: {
-        type: 'number',
-        easing: 'easeOutCubic',
-        duration: 950,
-        from(ctx) {
-          if (ctx.type === 'data') {
-            return ctx.chart.scales.y.getPixelForValue(0)
-          }
-
-          return undefined
-        },
-        delay: getAnimationDelay
-      }
-    },
-
-    transitions: {
-      show: {
-        animations: {
-          x: {
-            from: 0
-          },
-
-          y: {
-            from: 0
-          }
-        }
-      },
-
-      hide: {
-        animations: {
-          x: {
-            to: 0
-          },
-
-          y: {
-            to: 0
-          }
-        }
-      }
-    },
 
     interaction: {
       mode: 'index',
@@ -291,6 +321,11 @@ const chartOptions = computed(() => {
     },
 
     plugins: {
+      lineRevealPlugin: {
+        enabled: isLine,
+        duration: 1300
+      },
+
       legend: {
         display: false
       },
@@ -446,21 +481,20 @@ const chartOptions = computed(() => {
 .chart-fade-enter-active,
 .chart-fade-leave-active {
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .chart-fade-enter-from {
   opacity: 0;
-  transform: translateY(8px) scale(0.985);
+  transform: translateY(6px) scale(0.99);
 }
 
 .chart-fade-leave-to {
   opacity: 0;
-  transform: translateY(-8px) scale(0.985);
+  transform: translateY(-6px) scale(0.99);
 }
 
-/* This fixes the expanded sidebar layout */
 @media (max-width: 1450px) {
   .attendance-header {
     flex-direction: column;
@@ -478,7 +512,6 @@ const chartOptions = computed(() => {
   }
 }
 
-/* Tablet */
 @media (max-width: 991px) {
   .attendance-actions {
     align-items: flex-start;
@@ -495,7 +528,6 @@ const chartOptions = computed(() => {
   }
 }
 
-/* Mobile */
 @media (max-width: 767px) {
   .dashboard-card {
     padding: 22px;

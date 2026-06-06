@@ -7,21 +7,16 @@
     <section class="brand-section position-relative text-white d-none d-lg-flex">
       <div class="overlay"></div>
 
-      <div
-        class="brand-content position-relative z-2 w-100 d-flex flex-column justify-content-between p-5"
-      >
+      <div class="brand-content position-relative z-2 w-100 d-flex flex-column justify-content-between p-5">
         <div>
           <div class="d-flex align-items-center gap-3 mb-4">
             <div class="logo-wrapper">
-              <img src="/public/JANNS_logo.jpg" alt="JANNS SPRING RESORT logo" class="logo-img" />
+              <img src="/JANNS_logo.jpg" alt="JANNS SPRING RESORT logo" class="logo-img" />
             </div>
 
             <div>
               <h2 class="brand-title mb-0">JANNS SPRING RESORT</h2>
-
-              <p class="brand-subtitle mb-0">
-                Admin Management System
-              </p>
+              <p class="brand-subtitle mb-0">Admin Management System</p>
             </div>
           </div>
 
@@ -48,33 +43,24 @@
         <div class="feature-grid">
           <div class="feature-card">
             <Icon name="solar:box-bold-duotone" size="26" />
-
             <div>
               <h6>Inventory Management</h6>
-
               <p>Manage and monitor resort inventory supplies.</p>
             </div>
           </div>
 
           <div class="feature-card">
-            <Icon
-              name="solar:users-group-rounded-bold-duotone"
-              size="26"
-            />
-
+            <Icon name="solar:users-group-rounded-bold-duotone" size="26" />
             <div>
               <h6>Staff Monitoring</h6>
-
               <p>Track attendance and employee records.</p>
             </div>
           </div>
 
           <div class="feature-card">
             <Icon name="solar:wallet-money-bold-duotone" size="26" />
-
             <div>
               <h6>Financial Control</h6>
-
               <p>Monitor expenses and operational reports.</p>
             </div>
           </div>
@@ -83,9 +69,7 @@
     </section>
 
     <!-- RIGHT SIDE -->
-    <section
-      class="login-section flex-grow-1 d-flex align-items-center justify-content-center position-relative"
-    >
+    <section class="login-section flex-grow-1 d-flex align-items-center justify-content-center position-relative">
       <div class="floating-circle circle-1"></div>
       <div class="floating-circle circle-2"></div>
       <div class="floating-circle circle-3"></div>
@@ -97,7 +81,6 @@
           </div>
 
           <h3>JANNS SPRING RESORT</h3>
-
           <p>Admin Management System</p>
         </div>
 
@@ -112,16 +95,19 @@
           </p>
         </div>
 
-        <form class="login-form">
+        <form class="login-form" @submit.prevent="handleLogin">
           <div class="input-group-custom mb-4">
-            <label>Admin Username</label>
+            <label>Email</label>
 
             <div class="input-wrapper">
               <Icon name="solar:user-bold-duotone" class="input-icon" />
 
               <input
-                type="text"
-                placeholder="Enter admin username"
+                v-model.trim="form.email"
+                type="email"
+                placeholder="Enter admin email"
+                autocomplete="email"
+                required
               />
             </div>
           </div>
@@ -130,14 +116,14 @@
             <label>Password</label>
 
             <div class="input-wrapper">
-              <Icon
-                name="solar:lock-password-bold-duotone"
-                class="input-icon"
-              />
+              <Icon name="solar:lock-password-bold-duotone" class="input-icon" />
 
               <input
+                v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 placeholder="Enter your password"
+                autocomplete="current-password"
+                required
               />
 
               <button
@@ -146,21 +132,16 @@
                 @click="showPassword = !showPassword"
               >
                 <Icon
-                  :name="
-                    showPassword
-                      ? 'solar:eye-closed-bold'
-                      : 'solar:eye-bold'
-                  "
+                  :name="showPassword ? 'solar:eye-closed-bold' : 'solar:eye-bold'"
                 />
               </button>
             </div>
           </div>
 
-          <div
-            class="d-flex align-items-center justify-content-between mb-4 options-row"
-          >
+          <div class="d-flex align-items-center justify-content-between mb-4 options-row">
             <div class="form-check remember-check">
               <input
+                v-model="remember"
                 class="form-check-input"
                 type="checkbox"
                 id="remember"
@@ -171,18 +152,23 @@
               </label>
             </div>
 
-            <a href="#" class="forgot-link">
-              Reset Password
-            </a>
+            <a href="#" class="forgot-link">Reset Password</a>
           </div>
 
-          <button type="submit" class="login-btn w-100">
-            <span>Login</span>
+          <button type="submit" class="login-btn w-100" :disabled="loading">
+            <span>{{ loading ? 'Logging in...' : 'Login' }}</span>
 
             <Icon
+              v-if="!loading"
               name="solar:arrow-right-up-bold"
               size="18"
             />
+
+            <span
+              v-else
+              class="spinner-border spinner-border-sm"
+              role="status"
+            ></span>
           </button>
         </form>
 
@@ -198,10 +184,81 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useToast } from 'vue-toastification'
+
+definePageMeta({
+  layout: false
+})
+
+const { apiFetch } = useApi()
+const toast = useToast()
 
 const showPassword = ref(false)
 const pageLoaded = ref(false)
+const loading = ref(false)
+const remember = ref(false)
+
+const tokenCookie = useCookie('token')
+const userCookie = useCookie('user')
+
+const form = reactive({
+  email: '',
+  password: ''
+})
+
+const getBackendMessage = (err) => {
+  return (
+    err?.data?.message ||
+    err?.response?._data?.message ||
+    err?.response?.data?.message ||
+    err?.message ||
+    'Something went wrong. Please try again.'
+  )
+}
+
+const getValidationMessage = (err) => {
+  const errors =
+    err?.data?.errors ||
+    err?.response?._data?.errors ||
+    err?.response?.data?.errors
+
+  if (!errors) return null
+
+  return Object.values(errors).flat()[0]
+}
+
+const handleLogin = async () => {
+  if (loading.value) return
+
+  loading.value = true
+
+  try {
+    const res = await apiFetch('/login', {
+      method: 'POST',
+      body: {
+        email: form.email,
+        password: form.password
+      }
+    })
+
+    tokenCookie.value = res.token
+    userCookie.value = res.user
+
+    toast.success(res.message || 'Login successful')
+
+    setTimeout(async () => {
+      await navigateTo('/admin')
+    }, 500)
+  } catch (err) {
+    const validationMessage = getValidationMessage(err)
+    const backendMessage = getBackendMessage(err)
+
+    toast.error(validationMessage || backendMessage)
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(() => {
   setTimeout(() => {

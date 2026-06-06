@@ -1,6 +1,7 @@
 export const useApi = () => {
   const config = useRuntimeConfig()
   const token = useCookie('token')
+  const user = useCookie('user')
 
   const apiFetch = async (url, options = {}) => {
     try {
@@ -14,16 +15,16 @@ export const useApi = () => {
         }
       })
     } catch (err) {
+      const status = err?.statusCode || err?.status
 
-      // ✅ ONLY auto-logout if NOT login request
-      if (err?.status === 401 && url !== '/login') {
+      // auto logout except login request
+      if (status === 401 && url !== '/login') {
         token.value = null
-        useCookie('user').value = null
+        user.value = null
 
         return navigateTo('/admin/login')
       }
 
-      // ✅ Let login page handle error
       throw err
     }
   }

@@ -1,30 +1,13 @@
 <template>
-  <div class="payroll-page" :class="`print-${printMode}`">
-    <!-- PAGE HEADER -->
-    <section class="page-header mb-4">
-      <div class="header-actions">
-        <button
-          class="btn btn-light border action-btn"
-          @click="printPayrollSummary"
-        >
-          <Icon name="solar:printer-2-bold-duotone" size="20" />
-          Print Payroll
-        </button>
-
-        <button class="btn btn-success action-btn">
-          <Icon name="solar:file-download-bold-duotone" size="20" />
-          Export Report
-        </button>
-      </div>
-    </section>
-
+  <div class="payroll-page page-animate" :class="`print-${printMode}`">
     <!-- SUMMARY CARDS -->
-    <section class="mb-4">
+    <section class="mb-4 scroll-animate">
       <div class="row g-4">
         <div
-          v-for="card in payrollCards"
+          v-for="(card, index) in payrollCards"
           :key="card.title"
-          class="col-xl-3 col-md-6"
+          class="col-xl-3 col-md-6 scroll-animate"
+          :style="{ transitionDelay: `${index * 0.08}s` }"
         >
           <div class="summary-card h-100" :class="`summary-${card.color}`">
             <div class="summary-icon">
@@ -42,12 +25,37 @@
     </section>
 
     <!-- FILTERS -->
-    <section class="filter-card mb-4">
+    <section class="filter-card mb-4 scroll-animate">
+      <div class="filter-header">
+        <h5 class="filter-title">Search Staff</h5>
+
+        <div class="filter-actions">
+          <button
+            class="btn action-btn action-btn-light"
+            type="button"
+            @click="printPayrollSummary"
+          >
+            <Icon name="solar:printer-bold-duotone" size="20" />
+            <span>Print Payroll</span>
+          </button>
+
+          <button
+            class="btn action-btn action-btn-primary"
+            type="button"
+          >
+            <Icon name="solar:file-download-bold-duotone" size="20" />
+            <span>Export Report</span>
+          </button>
+        </div>
+      </div>
+
       <div class="row g-3 align-items-end">
         <div class="col-xl-4 col-lg-4 col-md-6">
-          <label class="form-label">Search Staff</label>
+          <label class="form-label">Search</label>
+
           <div class="search-box">
             <Icon name="solar:magnifer-bold-duotone" size="20" />
+
             <input
               v-model="search"
               type="text"
@@ -59,6 +67,7 @@
 
         <div class="col-xl-3 col-lg-3 col-md-6">
           <label class="form-label">Month</label>
+
           <select v-model="selectedMonth" class="form-select">
             <option value="May 2026">May 2026</option>
             <option value="April 2026">April 2026</option>
@@ -70,6 +79,7 @@
 
         <div class="col-xl-2 col-lg-2 col-md-6">
           <label class="form-label">Status</label>
+
           <select v-model="selectedStatus" class="form-select">
             <option value="All">All</option>
             <option value="Paid">Paid</option>
@@ -79,8 +89,10 @@
 
         <div class="col-xl-3 col-lg-3 col-md-6">
           <label class="form-label">Position</label>
+
           <select v-model="selectedPosition" class="form-select">
             <option value="All">All</option>
+
             <option
               v-for="position in positions"
               :key="position"
@@ -94,7 +106,7 @@
     </section>
 
     <!-- PAYROLL TABLE -->
-    <section class="table-card">
+    <section class="table-card scroll-animate">
       <div class="table-card-header">
         <div>
           <h5 class="mb-1">Staff Payroll List</h5>
@@ -126,7 +138,12 @@
           </thead>
 
           <tbody>
-            <tr v-for="staff in filteredPayroll" :key="staff.id">
+            <tr
+              v-for="(staff, index) in filteredPayroll"
+              :key="staff.id"
+              class="table-row-animate"
+              :style="{ animationDelay: `${index * 0.04}s` }"
+            >
               <td>
                 <div class="staff-info">
                   <div class="staff-avatar">
@@ -350,7 +367,7 @@
       style="display: block;"
     >
       <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
+        <div class="modal-content modal-pop">
           <div class="modal-header">
             <div>
               <h5 class="modal-title">Payslip Details</h5>
@@ -477,7 +494,14 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch
+} from 'vue'
 
 definePageMeta({
   title: 'Payroll Summary',
@@ -490,6 +514,8 @@ const selectedStatus = ref('All')
 const selectedPosition = ref('All')
 const selectedStaff = ref(null)
 const printMode = ref('none')
+
+let observer = null
 
 const payroll = ref([
   {
@@ -688,6 +714,18 @@ const payrollCards = computed(() => [
   }
 ])
 
+const observeScrollItems = async () => {
+  await nextTick()
+
+  const animatedItems = document.querySelectorAll('.scroll-animate:not(.show)')
+
+  animatedItems.forEach((item) => {
+    if (observer) {
+      observer.observe(item)
+    }
+  })
+}
+
 const formatPeso = (amount) => {
   return new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -762,25 +800,59 @@ const printPayslip = async (staff) => {
   }, 150)
 }
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('afterprint', resetPrintMode)
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show')
+        } else {
+          entry.target.classList.remove('show')
+        }
+      })
+    },
+    {
+      threshold: 0.12
+    }
+  )
+
+  await observeScrollItems()
 })
+
+watch(
+  filteredPayroll,
+  async () => {
+    await observeScrollItems()
+  },
+  { deep: true }
+)
 
 onBeforeUnmount(() => {
   window.removeEventListener('afterprint', resetPrintMode)
+
+  if (observer) {
+    observer.disconnect()
+  }
+
   resetPrintMode()
 })
 </script>
 
 <style scoped>
 .payroll-page {
-  animation: pageFade 0.45s ease;
+  padding-bottom: 24px;
 }
 
-@keyframes pageFade {
+.page-animate {
+  animation: pageFadeSlide 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pageFadeSlide {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
 
   to {
@@ -789,43 +861,51 @@ onBeforeUnmount(() => {
   }
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(30px) scale(0.985);
+  transition:
+    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.75s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
 }
 
-.eyebrow {
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  color: #2f8f46;
+.scroll-animate.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
 
-.page-title {
-  font-size: clamp(1.5rem, 3vw, 2rem);
-  font-weight: 800;
-  color: #162015;
+.table-row-animate {
+  opacity: 0;
+  animation: tableRowFade 0.45s ease forwards;
 }
 
-.page-subtitle {
-  color: #6c757d;
+@keyframes tableRowFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.header-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+.modal-pop {
+  animation: modalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-weight: 700;
-  border-radius: 14px;
-  padding: 0.65rem 1rem;
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .summary-card {
@@ -916,7 +996,76 @@ onBeforeUnmount(() => {
 }
 
 .filter-card {
-  padding: 1.25rem;
+  padding: 1.5rem;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.filter-title {
+  font-weight: 900;
+  color: #162015;
+  margin: 0;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  min-height: 46px;
+  border-radius: 16px;
+  padding: 0 18px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.action-btn:active {
+  transform: scale(0.97);
+}
+
+.action-btn-light {
+  background: #ffffff;
+  color: #344054;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+}
+
+.action-btn-light:hover {
+  background: #f8fafc;
+  color: #101828;
+}
+
+.action-btn-primary {
+  background: #198754;
+  color: #ffffff;
+  border: 1px solid #198754;
+  box-shadow: 0 8px 22px rgba(25, 135, 84, 0.22);
+}
+
+.action-btn-primary:hover {
+  background: #157347;
+  border-color: #157347;
+  color: #ffffff;
 }
 
 .form-label {
@@ -929,16 +1078,19 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-.search-box svg {
+.search-box :deep(svg),
+.search-box :deep(.iconify) {
   position: absolute;
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #6c757d;
+  z-index: 2;
+  pointer-events: none;
 }
 
 .search-box .form-control {
-  padding-left: 2.6rem;
+  padding-left: 2.8rem;
 }
 
 .form-control,
@@ -946,12 +1098,14 @@ onBeforeUnmount(() => {
   border-radius: 14px;
   min-height: 46px;
   border-color: rgba(22, 32, 21, 0.12);
+  transition: 0.25s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
   border-color: #2f8f46;
   box-shadow: 0 0 0 0.2rem rgba(47, 143, 70, 0.13);
+  transform: translateY(-1px);
 }
 
 .table-card {
@@ -1003,6 +1157,14 @@ onBeforeUnmount(() => {
   color: #3f493f;
   border-bottom: 1px solid rgba(22, 32, 21, 0.06);
   white-space: nowrap;
+}
+
+.payroll-table tbody tr {
+  transition: 0.25s ease;
+}
+
+.payroll-table tbody tr:hover {
+  background: #fbfdfb;
 }
 
 .staff-info {
@@ -1090,6 +1252,11 @@ onBeforeUnmount(() => {
   display: inline-grid;
   place-items: center;
   padding: 0;
+  transition: 0.25s ease;
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-2px);
 }
 
 .empty-icon {
@@ -1194,18 +1361,39 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 991px) {
-  .page-header {
-    align-items: flex-start;
+  .filter-header {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .header-actions {
+  .filter-actions {
     width: 100%;
   }
 
-  .header-actions .btn {
+  .filter-actions .btn {
     flex: 1;
-    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-animate,
+  .scroll-animate,
+  .scroll-animate.show,
+  .table-row-animate,
+  .modal-pop {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .summary-card,
+  .action-btn,
+  .form-control,
+  .form-select,
+  .payroll-table tbody tr,
+  .action-buttons .btn {
+    transition: none !important;
   }
 }
 </style>

@@ -1,12 +1,13 @@
 <template>
   <div class="staff-page">
     <!-- SUMMARY CARDS -->
-    <section class="mb-4">
+    <section class="mb-4 scroll-animate">
       <div class="row g-4">
         <div
-          v-for="card in summaryCards"
+          v-for="(card, index) in summaryCards"
           :key="card.title"
-          class="col-12 col-sm-6 col-xl-3"
+          class="col-12 col-sm-6 col-xl-3 scroll-animate"
+          :style="{ transitionDelay: `${index * 0.08}s` }"
         >
           <AdminAnalyticsCard
             :title="card.title"
@@ -20,28 +21,26 @@
     </section>
 
     <!-- TOOLBAR -->
-    <AdminPageToolbar
-      title="Staff Directory"
-      subtitle="View staff profiles, positions, salary type, and attendance status."
-    >
-      <template #actions>
-        <button
-          class="btn toolbar-btn toolbar-btn-primary"
-          type="button"
-          @click="openAddStaffModal"
-        >
-          <Icon
-            name="solar:user-plus-bold-duotone"
-            size="20"
-          />
-
-          <span>Add Staff</span>
-        </button>
-      </template>
-    </AdminPageToolbar>
+    <div class="scroll-animate">
+      <AdminPageToolbar
+        title="Staff Directory"
+        subtitle="View staff profiles, positions, salary type, and attendance status."
+      >
+        <template #actions>
+          <button
+            class="btn toolbar-btn toolbar-btn-primary"
+            type="button"
+            @click="openAddStaffModal"
+          >
+            <Icon name="solar:user-plus-bold-duotone" size="20" />
+            <span>Add Staff</span>
+          </button>
+        </template>
+      </AdminPageToolbar>
+    </div>
 
     <!-- FILTERS -->
-    <section class="filter-card mb-4">
+    <section class="filter-card mb-4 scroll-animate">
       <div class="row g-3 align-items-center">
         <div class="col-12 col-lg-6">
           <div class="search-box">
@@ -65,17 +64,9 @@
             v-model="selectedStatus"
             class="form-select staff-select"
           >
-            <option value="All">
-              All Status
-            </option>
-
-            <option value="Active">
-              Active
-            </option>
-
-            <option value="Inactive">
-              Inactive
-            </option>
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
           </select>
         </div>
 
@@ -84,17 +75,9 @@
             v-model="selectedSalaryType"
             class="form-select staff-select"
           >
-            <option value="All">
-              All Salary Types
-            </option>
-
-            <option value="Monthly">
-              Monthly
-            </option>
-
-            <option value="Daily">
-              Daily
-            </option>
+            <option value="All">All Salary Types</option>
+            <option value="Monthly">Monthly</option>
+            <option value="Daily">Daily</option>
           </select>
         </div>
       </div>
@@ -102,11 +85,16 @@
 
     <!-- STAFF CARDS -->
     <section>
-      <div class="row g-4">
+      <TransitionGroup
+        name="staff-list"
+        tag="div"
+        class="row g-4"
+      >
         <div
-          v-for="staff in filteredStaff"
+          v-for="(staff, index) in filteredStaff"
           :key="staff.id"
-          class="col-12 col-sm-6 col-xl-4 col-xxl-3"
+          class="col-12 col-sm-6 col-xl-4 col-xxl-3 scroll-animate"
+          :style="{ transitionDelay: `${index * 0.06}s` }"
         >
           <AdminStaffCard
             :staff="staff"
@@ -119,7 +107,8 @@
 
         <div
           v-if="filteredStaff.length === 0"
-          class="col-12"
+          key="empty"
+          class="col-12 scroll-animate"
         >
           <div class="empty-card">
             <Icon
@@ -136,7 +125,7 @@
             </p>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
     </section>
 
     <!-- ADD STAFF MODAL COMPONENT -->
@@ -148,162 +137,155 @@
 
     <!-- EDIT STAFF MODAL -->
     <Teleport to="body">
-      <div
-        v-if="showEditStaffModal"
-        class="custom-modal-backdrop"
-      >
-        <div class="custom-modal-card">
-          <div class="modal-header-custom">
-            <div>
-              <h5 class="fw-bold mb-1">
-                Update Staff
-              </h5>
+      <Transition name="modal-fade">
+        <div
+          v-if="showEditStaffModal"
+          class="custom-modal-backdrop"
+          @click.self="closeEditStaffModal"
+        >
+          <div class="custom-modal-card">
+            <div class="modal-header-custom">
+              <div>
+                <h5 class="fw-bold mb-1">
+                  Update Staff
+                </h5>
 
-              <p class="text-muted mb-0">
-                Edit staff profile, salary, and status.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              class="modal-close-btn"
-              @click="closeEditStaffModal"
-            >
-              <Icon
-                name="solar:close-circle-bold-duotone"
-                size="24"
-              />
-            </button>
-          </div>
-
-          <form @submit.prevent="updateStaff">
-            <div class="row g-3 mt-2">
-              <div class="col-12">
-                <label class="form-label">Full Name</label>
-                <input
-                  v-model="editForm.name"
-                  type="text"
-                  class="form-control modal-input"
-                  required
-                />
+                <p class="text-muted mb-0">
+                  Edit staff profile, salary, and status.
+                </p>
               </div>
 
-              <div class="col-12">
-                <label class="form-label">Position</label>
-                <input
-                  v-model="editForm.position"
-                  type="text"
-                  class="form-control modal-input"
-                  required
-                />
-              </div>
-
-              <div class="col-12">
-                <label class="form-label">Phone</label>
-                <input
-                  v-model="editForm.phone"
-                  type="text"
-                  class="form-control modal-input"
-                  required
-                />
-              </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label">Salary Type</label>
-                <select
-                  v-model="editForm.salaryType"
-                  class="form-select modal-input"
-                  required
-                >
-                  <option value="Monthly">
-                    Monthly
-                  </option>
-
-                  <option value="Daily">
-                    Daily
-                  </option>
-                </select>
-              </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label">
-                  {{ editForm.salaryType === 'Monthly' ? 'Monthly Salary' : 'Daily Rate' }}
-                </label>
-
-                <input
-                  v-if="editForm.salaryType === 'Monthly'"
-                  v-model.number="editForm.monthlySalary"
-                  type="number"
-                  class="form-control modal-input"
-                  required
-                />
-
-                <input
-                  v-else
-                  v-model.number="editForm.dailyRate"
-                  type="number"
-                  class="form-control modal-input"
-                  required
-                />
-              </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label">Status</label>
-                <select
-                  v-model="editForm.status"
-                  class="form-select modal-input"
-                  required
-                >
-                  <option value="Active">
-                    Active
-                  </option>
-
-                  <option value="Inactive">
-                    Inactive
-                  </option>
-                </select>
-              </div>
-
-              <div class="col-12 col-md-6">
-                <label class="form-label">Avatar URL</label>
-                <input
-                  v-model="editForm.avatar"
-                  type="text"
-                  class="form-control modal-input"
-                />
-              </div>
-            </div>
-
-            <div class="modal-actions mt-4">
               <button
                 type="button"
-                class="btn cancel-btn"
+                class="modal-close-btn"
                 @click="closeEditStaffModal"
               >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                class="btn save-btn"
-              >
                 <Icon
-                  name="solar:diskette-bold-duotone"
-                  size="18"
+                  name="solar:close-circle-bold-duotone"
+                  size="24"
                 />
-
-                <span>Save Changes</span>
               </button>
             </div>
-          </form>
+
+            <form @submit.prevent="updateStaff">
+              <div class="row g-3 mt-2">
+                <div class="col-12">
+                  <label class="form-label">Full Name</label>
+                  <input
+                    v-model="editForm.name"
+                    type="text"
+                    class="form-control modal-input"
+                    required
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Position</label>
+                  <input
+                    v-model="editForm.position"
+                    type="text"
+                    class="form-control modal-input"
+                    required
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Phone</label>
+                  <input
+                    v-model="editForm.phone"
+                    type="text"
+                    class="form-control modal-input"
+                    required
+                  />
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Salary Type</label>
+                  <select
+                    v-model="editForm.salaryType"
+                    class="form-select modal-input"
+                    required
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Daily">Daily</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">
+                    {{ editForm.salaryType === 'Monthly' ? 'Monthly Salary' : 'Daily Rate' }}
+                  </label>
+
+                  <input
+                    v-if="editForm.salaryType === 'Monthly'"
+                    v-model.number="editForm.monthlySalary"
+                    type="number"
+                    class="form-control modal-input"
+                    required
+                  />
+
+                  <input
+                    v-else
+                    v-model.number="editForm.dailyRate"
+                    type="number"
+                    class="form-control modal-input"
+                    required
+                  />
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Status</label>
+                  <select
+                    v-model="editForm.status"
+                    class="form-select modal-input"
+                    required
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label">Avatar URL</label>
+                  <input
+                    v-model="editForm.avatar"
+                    type="text"
+                    class="form-control modal-input"
+                  />
+                </div>
+              </div>
+
+              <div class="modal-actions mt-4">
+                <button
+                  type="button"
+                  class="btn cancel-btn"
+                  @click="closeEditStaffModal"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  class="btn save-btn"
+                >
+                  <Icon
+                    name="solar:diskette-bold-duotone"
+                    size="18"
+                  />
+
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, nextTick, watch } from 'vue'
 
 definePageMeta({
   title: 'Staff',
@@ -315,6 +297,8 @@ const selectedStatus = ref('All')
 const selectedSalaryType = ref('All')
 const showAddStaffModal = ref(false)
 const showEditStaffModal = ref(false)
+
+let observer = null
 
 const editForm = ref({
   id: null,
@@ -463,6 +447,44 @@ const summaryCards = computed(() => {
   ]
 })
 
+const observeScrollItems = async () => {
+  await nextTick()
+
+  const animatedItems = document.querySelectorAll('.scroll-animate:not(.show)')
+
+  animatedItems.forEach((item) => {
+    if (observer) {
+      observer.observe(item)
+    }
+  })
+}
+
+onMounted(async () => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('show')
+          observer.unobserve(entry.target)
+        }
+      })
+    },
+    {
+      threshold: 0.15
+    }
+  )
+
+  await observeScrollItems()
+})
+
+watch(
+  filteredStaff,
+  async () => {
+    await observeScrollItems()
+  },
+  { deep: true }
+)
+
 const openAddStaffModal = () => {
   showAddStaffModal.value = true
 }
@@ -518,7 +540,9 @@ const addStaff = (form) => {
     dailyRate: form.salaryType === 'Daily' ? Number(form.dailyRate || 0) : null,
     status: form.status,
     attendance: 'Not Timed In',
-    avatar: `https://i.pravatar.cc/300?img=${form.avatar}`
+    avatar: form.avatar
+      ? `https://i.pravatar.cc/300?img=${form.avatar}`
+      : 'https://i.pravatar.cc/300?img=1'
   }
 
   staffList.value.unshift(newStaff)
@@ -576,14 +600,57 @@ const toggleStatus = (staff) => {
   padding-bottom: 24px;
 }
 
+/* SCROLL ANIMATION */
+.scroll-animate {
+  opacity: 0;
+  transform: translateY(32px) scale(0.98);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-animate.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* SMOOTH FILTERED STAFF ANIMATION */
+.staff-list-enter-active,
+.staff-list-leave-active {
+  transition: all 0.35s ease;
+}
+
+.staff-list-enter-from,
+.staff-list-leave-to {
+  opacity: 0;
+  transform: translateY(18px) scale(0.96);
+}
+
+.staff-list-move {
+  transition: transform 0.35s ease;
+}
+
+/* COMPONENT HOVER FEEL */
+:deep(.card),
+:deep(.analytics-card),
+:deep(.staff-card) {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+:deep(.card:hover),
+:deep(.analytics-card:hover),
+:deep(.staff-card:hover) {
+  transform: translateY(-3px);
+}
+
 /* FILTER */
 .filter-card {
   background: white;
-
   border-radius: 26px;
-
   padding: 20px;
-
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
 }
 
@@ -593,26 +660,20 @@ const toggleStatus = (staff) => {
 
 .search-icon {
   position: absolute;
-
   top: 50%;
   left: 18px;
-
   transform: translateY(-50%);
-
   color: #718096;
 }
 
 .staff-search,
 .staff-select {
   height: 52px;
-
   border: none;
-
   border-radius: 16px;
-
   background: #f4f8f7;
-
   box-shadow: none;
+  transition: 0.25s ease;
 }
 
 .staff-search {
@@ -623,23 +684,19 @@ const toggleStatus = (staff) => {
 .staff-select:focus {
   background: #f4f8f7;
   box-shadow: 0 0 0 3px rgba(20, 139, 128, 0.12);
+  transform: translateY(-1px);
 }
 
 /* EMPTY */
 .empty-card {
   min-height: 260px;
-
   background: white;
-
   border-radius: 30px;
-
   color: #148b80;
-
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
 }
 
@@ -647,30 +704,46 @@ const toggleStatus = (staff) => {
 .custom-modal-backdrop {
   position: fixed;
   inset: 0;
-
   z-index: 99999;
-
   background: rgba(15, 23, 42, 0.45);
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   padding: 20px;
+  backdrop-filter: blur(5px);
 }
 
 .custom-modal-card {
   width: min(100%, 620px);
   max-height: 90vh;
   overflow-y: auto;
-
   background: white;
-
   border-radius: 28px;
-
   padding: 24px;
-
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  animation: modalPop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+@keyframes modalPop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header-custom {
@@ -682,37 +755,38 @@ const toggleStatus = (staff) => {
 .modal-close-btn {
   width: 42px;
   height: 42px;
-
   border: none;
-
   border-radius: 14px;
-
   background: #f4f8f7;
   color: #64748b;
-
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: 0.25s ease;
+}
+
+.modal-close-btn:hover {
+  transform: translateY(-2px);
+  background: #e8f3f1;
+  color: #148b80;
 }
 
 .modal-input {
   height: 50px;
-
   border: none;
-
   border-radius: 16px;
-
   background: #f4f8f7;
+  transition: 0.25s ease;
 }
 
 .modal-input:focus {
   background: #f4f8f7;
   box-shadow: 0 0 0 3px rgba(20, 139, 128, 0.12);
+  transform: translateY(-1px);
 }
 
 .form-label {
   color: #334155;
-
   font-size: 0.85rem;
   font-weight: 800;
 }
@@ -726,21 +800,24 @@ const toggleStatus = (staff) => {
 .cancel-btn,
 .save-btn {
   height: 46px;
-
   border-radius: 15px;
-
   padding: 0 18px;
-
   font-weight: 800;
-
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  transition: 0.25s ease;
 }
 
 .cancel-btn {
   background: #f1f5f9;
   color: #475569;
+}
+
+.cancel-btn:hover {
+  transform: translateY(-2px);
+  background: #e2e8f0;
+  color: #334155;
 }
 
 .save-btn {
@@ -750,6 +827,14 @@ const toggleStatus = (staff) => {
 
 .save-btn:hover {
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(20, 139, 128, 0.25);
+}
+
+.save-btn:active,
+.cancel-btn:active,
+.modal-close-btn:active {
+  transform: scale(0.97);
 }
 
 /* RESPONSIVE */
@@ -772,6 +857,44 @@ const toggleStatus = (staff) => {
   .save-btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* REDUCE MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .scroll-animate,
+  .custom-modal-card {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .staff-list-enter-active,
+  .staff-list-leave-active,
+  .staff-list-move,
+  :deep(.card),
+  :deep(.analytics-card),
+  :deep(.staff-card),
+  .staff-search,
+  .staff-select,
+  .modal-input,
+  .modal-close-btn,
+  .cancel-btn,
+  .save-btn {
+    transition: none !important;
+  }
+
+  :deep(.card:hover),
+  :deep(.analytics-card:hover),
+  :deep(.staff-card:hover),
+  .staff-search:focus,
+  .staff-select:focus,
+  .modal-input:focus,
+  .modal-close-btn:hover,
+  .cancel-btn:hover,
+  .save-btn:hover {
+    transform: none !important;
   }
 }
 </style>
