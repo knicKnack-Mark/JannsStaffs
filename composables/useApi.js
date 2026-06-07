@@ -9,7 +9,9 @@ export const useApi = () => {
         ...options,
         headers: {
           Accept: 'application/json',
-          'Content-Type': 'application/json',
+          ...(options.body instanceof FormData
+            ? {}
+            : { 'Content-Type': 'application/json' }),
           ...(token.value ? { Authorization: `Bearer ${token.value}` } : {}),
           ...(options.headers || {})
         }
@@ -17,7 +19,6 @@ export const useApi = () => {
     } catch (err) {
       const status = err?.statusCode || err?.status
 
-      // auto logout except login request
       if (status === 401 && url !== '/login') {
         token.value = null
         user.value = null
