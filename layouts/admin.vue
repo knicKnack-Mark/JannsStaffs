@@ -1,5 +1,7 @@
 <template>
   <div class="admin-layout">
+    <AdminResortLoader :show="pageLoading" />
+
     <AdminSidebar />
 
     <main
@@ -18,14 +20,8 @@
         </div>
 
         <div class="d-flex align-items-center gap-3">
-          <button
-            class="top-action-btn"
-            type="button"
-          >
-            <Icon
-              name="solar:bell-bold-duotone"
-              size="20"
-            />
+          <button class="top-action-btn" type="button">
+            <Icon name="solar:bell-bold-duotone" size="20" />
           </button>
 
           <div class="profile-card d-flex align-items-center gap-3">
@@ -53,14 +49,27 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAdminSidebar } from '@/composables/useAdminSidebar'
 
 const route = useRoute()
+const nuxtApp = useNuxtApp()
 const { collapsed } = useAdminSidebar()
+
+const pageLoading = ref(false)
 
 const pageTitle = computed(() => route.meta.title || 'Dashboard')
 const pageSubtitle = computed(() => route.meta.subtitle || 'Welcome back to JANNS SPRING RESORT')
+
+nuxtApp.hook('page:start', () => {
+  pageLoading.value = true
+})
+
+nuxtApp.hook('page:finish', () => {
+  setTimeout(() => {
+    pageLoading.value = false
+  }, 500)
+})
 </script>
 
 <style scoped>

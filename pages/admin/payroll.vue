@@ -42,9 +42,11 @@
           <button
             class="btn action-btn action-btn-primary"
             type="button"
+            :disabled="saving"
+            @click="generatePayroll(selectedMonth)"
           >
-            <Icon name="solar:file-download-bold-duotone" size="20" />
-            <span>Export Report</span>
+            <Icon name="solar:refresh-circle-bold-duotone" size="20" />
+            <span>{{ saving ? 'Generating...' : 'Generate Payroll' }}</span>
           </button>
         </div>
       </div>
@@ -60,7 +62,7 @@
               v-model="search"
               type="text"
               class="form-control"
-              placeholder="Search name or position..."
+              placeholder="Search name, position, or employee ID..."
             />
           </div>
         </div>
@@ -69,6 +71,7 @@
           <label class="form-label">Month</label>
 
           <select v-model="selectedMonth" class="form-select">
+            <option value="June 2026">June 2026</option>
             <option value="May 2026">May 2026</option>
             <option value="April 2026">April 2026</option>
             <option value="March 2026">March 2026</option>
@@ -116,7 +119,7 @@
         </div>
 
         <span class="record-count">
-          {{ filteredPayroll.length }} records
+          {{ loading ? 'Loading...' : `${filteredPayroll.length} records` }}
         </span>
       </div>
 
@@ -228,7 +231,7 @@
               </td>
             </tr>
 
-            <tr v-if="filteredPayroll.length === 0">
+            <tr v-if="!loading && filteredPayroll.length === 0">
               <td colspan="10" class="text-center py-5">
                 <Icon
                   name="solar:document-bold-duotone"
@@ -239,8 +242,14 @@
                 <h6 class="mb-1">No payroll records found</h6>
 
                 <p class="mb-0 text-muted">
-                  Try changing your search or filter.
+                  Click Generate Payroll or change your filters.
                 </p>
+              </td>
+            </tr>
+
+            <tr v-if="loading">
+              <td colspan="10" class="text-center py-5">
+                <h6 class="mb-0">Loading payroll records...</h6>
               </td>
             </tr>
           </tbody>
@@ -508,8 +517,17 @@ definePageMeta({
   subtitle: 'Monitor staff salary, attendance, deductions, and payroll status.'
 })
 
+const {
+  payroll,
+  loading,
+  saving,
+  fetchPayroll,
+  generatePayroll,
+  markPayrollAsPaid
+} = usePayroll()
+
 const search = ref('')
-const selectedMonth = ref('May 2026')
+const selectedMonth = ref('June 2026')
 const selectedStatus = ref('All')
 const selectedPosition = ref('All')
 const selectedStaff = ref(null)
@@ -517,124 +535,30 @@ const printMode = ref('none')
 
 let observer = null
 
-const payroll = ref([
-  {
-    id: 1,
-    employeeId: 'JNS-001',
-    name: 'Maria Santos',
-    position: 'Housekeeping',
-    salary: 15000,
-    presentDays: 24,
-    absentDays: 2,
-    grossSalary: 15000,
-    deductions: 1000,
-    status: 'Paid'
-  },
-  {
-    id: 2,
-    employeeId: 'JNS-002',
-    name: 'Juan Dela Cruz',
-    position: 'Maintenance',
-    salary: 18000,
-    presentDays: 22,
-    absentDays: 4,
-    grossSalary: 18000,
-    deductions: 2000,
-    status: 'Pending'
-  },
-  {
-    id: 3,
-    employeeId: 'JNS-003',
-    name: 'Ana Reyes',
-    position: 'Receptionist',
-    salary: 16000,
-    presentDays: 25,
-    absentDays: 1,
-    grossSalary: 16000,
-    deductions: 500,
-    status: 'Paid'
-  },
-  {
-    id: 4,
-    employeeId: 'JNS-004',
-    name: 'Carlo Mendoza',
-    position: 'Pool Attendant',
-    salary: 14000,
-    presentDays: 23,
-    absentDays: 3,
-    grossSalary: 14000,
-    deductions: 1200,
-    status: 'Pending'
-  },
-  {
-    id: 5,
-    employeeId: 'JNS-005',
-    name: 'Grace Villanueva',
-    position: 'Cashier',
-    salary: 17000,
-    presentDays: 26,
-    absentDays: 0,
-    grossSalary: 17000,
-    deductions: 0,
-    status: 'Paid'
-  },
-  {
-    id: 6,
-    employeeId: 'JNS-006',
-    name: 'Mark Rivera',
-    position: 'Security',
-    salary: 15500,
-    presentDays: 24,
-    absentDays: 2,
-    grossSalary: 15500,
-    deductions: 900,
-    status: 'Pending'
-  },
-  {
-    id: 7,
-    employeeId: 'JNS-007',
-    name: 'Liza Garcia',
-    position: 'Cook',
-    salary: 16500,
-    presentDays: 25,
-    absentDays: 1,
-    grossSalary: 16500,
-    deductions: 600,
-    status: 'Paid'
-  },
-  {
-    id: 8,
-    employeeId: 'JNS-008',
-    name: 'Ramon Flores',
-    position: 'Gardener',
-    salary: 13500,
-    presentDays: 23,
-    absentDays: 3,
-    grossSalary: 13500,
-    deductions: 1000,
-    status: 'Pending'
-  }
-])
-
 const payrollWithNet = computed(() => {
   return payroll.value.map((staff) => ({
     ...staff,
-    netSalary: staff.grossSalary - staff.deductions
+    salary: Number(staff.salary || 0),
+    presentDays: Number(staff.presentDays || 0),
+    absentDays: Number(staff.absentDays || 0),
+    grossSalary: Number(staff.grossSalary || 0),
+    deductions: Number(staff.deductions || 0),
+    netSalary: Number(staff.netSalary ?? staff.grossSalary - staff.deductions)
   }))
 })
 
 const positions = computed(() => {
-  return [...new Set(payroll.value.map((staff) => staff.position))]
+  return [...new Set(payroll.value.map((staff) => staff.position).filter(Boolean))]
 })
 
 const filteredPayroll = computed(() => {
   return payrollWithNet.value.filter((staff) => {
-    const keyword = search.value.toLowerCase()
+    const keyword = search.value.toLowerCase().trim()
 
     const matchesSearch =
-      staff.name.toLowerCase().includes(keyword) ||
-      staff.position.toLowerCase().includes(keyword) ||
-      staff.employeeId.toLowerCase().includes(keyword)
+      staff.name?.toLowerCase().includes(keyword) ||
+      staff.position?.toLowerCase().includes(keyword) ||
+      staff.employeeId?.toLowerCase().includes(keyword)
 
     const matchesStatus =
       selectedStatus.value === 'All' || staff.status === selectedStatus.value
@@ -659,19 +583,19 @@ const payrollPrintGroups = computed(() => {
 
 const totalGrossSalary = computed(() => {
   return filteredPayroll.value.reduce((total, staff) => {
-    return total + staff.grossSalary
+    return total + Number(staff.grossSalary || 0)
   }, 0)
 })
 
 const totalDeductions = computed(() => {
   return filteredPayroll.value.reduce((total, staff) => {
-    return total + staff.deductions
+    return total + Number(staff.deductions || 0)
   }, 0)
 })
 
 const totalNetPayroll = computed(() => {
   return filteredPayroll.value.reduce((total, staff) => {
-    return total + staff.netSalary
+    return total + Number(staff.netSalary || 0)
   }, 0)
 })
 
@@ -679,7 +603,7 @@ const totalPendingPayroll = computed(() => {
   return filteredPayroll.value
     .filter((staff) => staff.status === 'Pending')
     .reduce((total, staff) => {
-      return total + staff.netSalary
+      return total + Number(staff.netSalary || 0)
     }, 0)
 })
 
@@ -731,12 +655,13 @@ const formatPeso = (amount) => {
     style: 'currency',
     currency: 'PHP',
     maximumFractionDigits: 0
-  }).format(amount)
+  }).format(Number(amount || 0))
 }
 
-const getInitials = (name) => {
+const getInitials = (name = '') => {
   return name
     .split(' ')
+    .filter(Boolean)
     .map((word) => word[0])
     .join('')
     .slice(0, 2)
@@ -745,7 +670,7 @@ const getInitials = (name) => {
 
 const getGroupTotal = (group, field) => {
   return group.reduce((total, staff) => {
-    return total + staff[field]
+    return total + Number(staff[field] || 0)
   }, 0)
 }
 
@@ -753,12 +678,8 @@ const openPayslip = (staff) => {
   selectedStaff.value = staff
 }
 
-const markAsPaid = (id) => {
-  const staff = payroll.value.find((item) => item.id === id)
-
-  if (staff) {
-    staff.status = 'Paid'
-  }
+const markAsPaid = async (id) => {
+  await markPayrollAsPaid(id)
 }
 
 const resetPrintMode = () => {
@@ -818,7 +739,12 @@ onMounted(async () => {
     }
   )
 
+  await fetchPayroll(selectedMonth.value)
   await observeScrollItems()
+})
+
+watch(selectedMonth, async () => {
+  await fetchPayroll(selectedMonth.value)
 })
 
 watch(
