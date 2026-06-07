@@ -1,5 +1,8 @@
 <template>
-  <div class="attendance-page page-animate">
+  <div
+    v-if="hasLoaded"
+    class="attendance-page page-animate"
+  >
     <!-- SUMMARY CARDS -->
     <section class="mb-4 fade-slide-up delay-1">
       <div class="row g-4">
@@ -89,6 +92,7 @@ definePageMeta({
 })
 
 const {
+  hasLoaded,
   selectedDate,
   search,
   selectedStatus,

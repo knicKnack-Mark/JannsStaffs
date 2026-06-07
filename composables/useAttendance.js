@@ -1,75 +1,47 @@
+import { computed, nextTick, ref, watch } from 'vue'
+import { useToast } from 'vue-toastification'
+
 export const useAttendance = () => {
+  const { apiFetch } = useApi()
+  const toast = useToast()
+
+  const {
+    startPageLoading,
+    stopPageLoading
+  } = usePageLoader()
+
   const selectedDate = ref(new Date().toISOString().slice(0, 10))
   const search = ref('')
   const selectedStatus = ref('All')
 
+  const attendance = ref([])
+  const attendanceLogs = ref([])
+  const loading = ref(false)
+  const saving = ref(false)
+  const hasLoaded = ref(false)
+
   const defaultTimeIn = '08:00'
   const defaultTimeOut = '17:00'
 
-  const attendance = ref([
-    {
-      id: 1,
-      name: 'Juan Dela Cruz',
-      position: 'Pool Attendant',
-      department: 'Operations',
-      timeIn: '',
-      timeOut: '',
-      status: 'Pending',
-      remarks: '',
-      shiftStart: defaultTimeIn,
-      shiftEnd: defaultTimeOut
-    },
-    {
-      id: 2,
-      name: 'Maria Santos',
-      position: 'Front Desk Staff',
-      department: 'Reception',
-      timeIn: '',
-      timeOut: '',
-      status: 'Pending',
-      remarks: '',
-      shiftStart: defaultTimeIn,
-      shiftEnd: defaultTimeOut
-    },
-    {
-      id: 3,
-      name: 'Pedro Reyes',
-      position: 'Housekeeping Staff',
-      department: 'Housekeeping',
-      timeIn: '',
-      timeOut: '',
-      status: 'Pending',
-      remarks: '',
-      shiftStart: defaultTimeIn,
-      shiftEnd: defaultTimeOut
-    },
-    {
-      id: 4,
-      name: 'Ana Garcia',
-      position: 'Cashier',
-      department: 'Finance',
-      timeIn: '',
-      timeOut: '',
-      status: 'Pending',
-      remarks: '',
-      shiftStart: defaultTimeIn,
-      shiftEnd: defaultTimeOut
-    },
-    {
-      id: 5,
-      name: 'Mark Villanueva',
-      position: 'Maintenance Staff',
-      department: 'Maintenance',
-      timeIn: '',
-      timeOut: '',
-      status: 'Pending',
-      remarks: '',
-      shiftStart: defaultTimeIn,
-      shiftEnd: defaultTimeOut
-    }
-  ])
+  let fetchId = 0
 
-  const attendanceLogs = ref([])
+  const normalizeAttendance = (item) => ({
+    id: item.id,
+    staffId: item.staffId,
+    employeeId: item.employeeId,
+    name: item.name,
+    position: item.position,
+    department: item.department || 'Operations',
+    image: item.image || item.avatar || null,
+    date: item.date,
+    timeIn: item.timeIn || '',
+    timeOut: item.timeOut || '',
+    renderedHours: Number(item.renderedHours || 0),
+    status: item.status || 'Pending',
+    remarks: item.remarks || '',
+    shiftStart: item.shiftStart || defaultTimeIn,
+    shiftEnd: item.shiftEnd || defaultTimeOut
+  })
 
   const formattedSelectedDate = computed(() => {
     return new Date(selectedDate.value).toLocaleDateString('en-PH', {
@@ -84,9 +56,10 @@ export const useAttendance = () => {
 
     return attendance.value.filter((item) => {
       const matchesSearch =
-        item.name.toLowerCase().includes(keyword) ||
-        item.position.toLowerCase().includes(keyword) ||
-        item.department.toLowerCase().includes(keyword)
+        item.name?.toLowerCase().includes(keyword) ||
+        item.position?.toLowerCase().includes(keyword) ||
+        item.department?.toLowerCase().includes(keyword) ||
+        item.employeeId?.toLowerCase().includes(keyword)
 
       const matchesStatus =
         selectedStatus.value === 'All' ||
@@ -100,7 +73,7 @@ export const useAttendance = () => {
     const totalStaff = attendance.value.length
 
     const present = attendance.value.filter((item) => {
-      return ['On Time', 'Late', 'Undertime', 'Half Day'].includes(item.status)
+      return ['Present', 'On Time', 'Late', 'Undertime', 'Half Day'].includes(item.status)
     }).length
 
     const absent = attendance.value.filter((item) => item.status === 'Absent').length
@@ -143,18 +116,14 @@ export const useAttendance = () => {
     return Math.round((value / total) * 100)
   }
 
-  const getInitials = (name) => {
+  const getInitials = (name = '') => {
     return name
       .split(' ')
+      .filter(Boolean)
       .map((word) => word.charAt(0))
       .join('')
       .slice(0, 2)
       .toUpperCase()
-  }
-
-  const getCurrentTime = () => {
-    const now = new Date()
-    return now.toTimeString().slice(0, 5)
   }
 
   const formatTime = (time) => {
@@ -162,6 +131,7 @@ export const useAttendance = () => {
 
     const [hours, minutes] = time.split(':')
     const date = new Date()
+
     date.setHours(Number(hours))
     date.setMinutes(Number(minutes))
 
@@ -180,7 +150,17 @@ export const useAttendance = () => {
   }
 
   const getRenderedHours = (item) => {
-    if (!item.timeIn || !item.timeOut) return '0h 0m'
+    if (item.renderedHours && Number(item.renderedHours) > 0) {
+      const totalMinutes = Math.round(Number(item.renderedHours) * 60)
+      const hours = Math.floor(totalMinutes / 60)
+      const minutes = totalMinutes % 60
+
+      return `${hours}h ${minutes}m`
+    }
+
+    if (!item.timeIn || !item.timeOut) {
+      return '0h 0m'
+    }
 
     const start = convertTimeToMinutes(item.timeIn)
     const end = convertTimeToMinutes(item.timeOut)
@@ -190,61 +170,6 @@ export const useAttendance = () => {
     const minutes = totalMinutes % 60
 
     return `${hours}h ${minutes}m`
-  }
-
-  const getLateMinutes = (item) => {
-    if (!item.timeIn) return 0
-
-    const timeIn = convertTimeToMinutes(item.timeIn)
-    const shiftStart = convertTimeToMinutes(item.shiftStart)
-
-    return Math.max(timeIn - shiftStart, 0)
-  }
-
-  const getUndertimeMinutes = (item) => {
-    if (!item.timeOut) return 0
-
-    const timeOut = convertTimeToMinutes(item.timeOut)
-    const shiftEnd = convertTimeToMinutes(item.shiftEnd)
-
-    return Math.max(shiftEnd - timeOut, 0)
-  }
-
-  const updateAutoStatus = (item) => {
-    if (item.status === 'Absent') return
-
-    const lateMinutes = getLateMinutes(item)
-    const undertimeMinutes = getUndertimeMinutes(item)
-
-    if (!item.timeIn) {
-      item.status = 'Pending'
-      return
-    }
-
-    if (item.timeIn && !item.timeOut) {
-      item.status = lateMinutes > 0 ? 'Late' : 'On Time'
-      return
-    }
-
-    const renderedMinutes =
-      convertTimeToMinutes(item.timeOut) - convertTimeToMinutes(item.timeIn)
-
-    if (renderedMinutes > 0 && renderedMinutes < 240) {
-      item.status = 'Half Day'
-      return
-    }
-
-    if (undertimeMinutes > 0) {
-      item.status = 'Undertime'
-      return
-    }
-
-    if (lateMinutes > 0) {
-      item.status = 'Late'
-      return
-    }
-
-    item.status = 'On Time'
   }
 
   const addLog = (message, type = 'info') => {
@@ -260,105 +185,197 @@ export const useAttendance = () => {
     })
   }
 
-  const timeIn = (item) => {
+  const replaceAttendanceRecord = (updatedRecord) => {
+    const normalized = normalizeAttendance(updatedRecord)
+
+    const index = attendance.value.findIndex((item) => {
+      return item.id === normalized.id
+    })
+
+    if (index !== -1) {
+      attendance.value[index] = normalized
+    }
+  }
+
+  const waitForPagePaint = async () => {
+    await nextTick()
+
+    if (process.client) {
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(resolve)
+        })
+      })
+    }
+  }
+
+  const fetchAttendance = async () => {
+    const currentFetchId = ++fetchId
+
+    try {
+      loading.value = true
+      hasLoaded.value = false
+      startPageLoading()
+
+      const res = await apiFetch('/staff-attendance', {
+        query: {
+          date: selectedDate.value
+        }
+      })
+
+      if (currentFetchId !== fetchId) return
+
+      attendance.value = (res.data || []).map(normalizeAttendance)
+
+      await waitForPagePaint()
+
+      hasLoaded.value = true
+
+      await waitForPagePaint()
+
+      stopPageLoading(1000)
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Failed to load attendance.')
+
+      hasLoaded.value = true
+      stopPageLoading(1000)
+    } finally {
+      if (currentFetchId === fetchId) {
+        loading.value = false
+      }
+    }
+  }
+
+  const timeIn = async (item) => {
     if (isTimeInDisabled(item)) return
 
-    item.timeIn = getCurrentTime()
-    item.status = 'On Time'
+    try {
+      saving.value = true
 
-    updateAutoStatus(item)
+      const res = await apiFetch(`/staff-attendance/${item.id}/time-in`, {
+        method: 'PATCH'
+      })
 
-    const lateMinutes = getLateMinutes(item)
-
-    if (lateMinutes > 0) {
-      addLog(`${item.name} timed in late by ${lateMinutes} minute(s).`, 'warning')
-    } else {
-      addLog(`${item.name} timed in on time.`, 'success')
+      replaceAttendanceRecord(res.data)
+      addLog(`${item.name} timed in successfully.`, 'success')
+      toast.success(res.message || 'Time in recorded successfully.')
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Failed to record time in.')
+    } finally {
+      saving.value = false
     }
   }
 
-  const timeOut = (item) => {
+  const timeOut = async (item) => {
     if (isTimeOutDisabled(item)) return
 
-    item.timeOut = getCurrentTime()
+    try {
+      saving.value = true
 
-    updateAutoStatus(item)
+      const res = await apiFetch(`/staff-attendance/${item.id}/time-out`, {
+        method: 'PATCH'
+      })
 
-    const undertimeMinutes = getUndertimeMinutes(item)
-
-    if (undertimeMinutes > 0) {
-      addLog(`${item.name} timed out early by ${undertimeMinutes} minute(s).`, 'warning')
-    } else {
+      replaceAttendanceRecord(res.data)
       addLog(`${item.name} timed out successfully.`, 'success')
+      toast.success(res.message || 'Time out recorded successfully.')
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Failed to record time out.')
+    } finally {
+      saving.value = false
     }
   }
 
-  const markAbsent = (item) => {
+  const markAbsent = async (item) => {
     if (isAbsentDisabled(item)) return
 
-    item.timeIn = ''
-    item.timeOut = ''
-    item.status = 'Absent'
-    item.remarks = item.remarks || 'Marked absent by admin'
+    try {
+      saving.value = true
 
-    addLog(`${item.name} was marked as absent.`, 'danger')
+      const res = await apiFetch(`/staff-attendance/${item.id}/absent`, {
+        method: 'PATCH'
+      })
+
+      replaceAttendanceRecord(res.data)
+      addLog(`${item.name} was marked as absent.`, 'danger')
+      toast.success(res.message || 'Staff marked as absent.')
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Failed to mark absent.')
+    } finally {
+      saving.value = false
+    }
   }
 
-  const toggleStatus = (item) => {
-    const statuses = ['Pending', 'On Time', 'Late', 'Undertime', 'Half Day', 'Absent']
+  const toggleStatus = async (item) => {
+    const statuses = ['Pending', 'Present', 'Absent']
     const currentIndex = statuses.indexOf(item.status)
     const nextIndex = (currentIndex + 1) % statuses.length
+    const nextStatus = statuses[nextIndex]
 
-    item.status = statuses[nextIndex]
-
-    if (item.status === 'Absent') {
-      item.timeIn = ''
-      item.timeOut = ''
+    if (nextStatus === 'Present') {
+      await timeIn(item)
+      return
     }
 
-    addLog(`${item.name}'s status changed to ${item.status}.`, 'info')
+    if (nextStatus === 'Absent') {
+      await markAbsent(item)
+      return
+    }
+
+    addLog(`${item.name}'s status cannot be reset from here.`, 'warning')
+    toast.info('Use date refresh if you need to reset attendance.')
   }
 
-  const updateRemarks = ({ item, remarks }) => {
-    item.remarks = remarks
-    addLog(`${item.name}'s remarks were updated.`, 'info')
+  const updateRemarks = async ({ item, remarks }) => {
+    try {
+      saving.value = true
+
+      const res = await apiFetch(`/staff-attendance/${item.id}/remarks`, {
+        method: 'PATCH',
+        body: {
+          remarks
+        }
+      })
+
+      replaceAttendanceRecord(res.data)
+      addLog(`${item.name}'s remarks were updated.`, 'info')
+      toast.success(res.message || 'Remarks updated successfully.')
+    } catch (err) {
+      console.error(err)
+      toast.error(err?.data?.message || 'Failed to update remarks.')
+    } finally {
+      saving.value = false
+    }
   }
 
-  const markAllPresent = () => {
-    attendance.value.forEach((item) => {
-      if (item.status === 'Pending') {
-        item.timeIn = item.shiftStart
-        item.status = 'On Time'
+  const markAllPresent = async () => {
+    for (const item of attendance.value) {
+      if (!isTimeInDisabled(item)) {
+        await timeIn(item)
       }
-    })
+    }
 
-    addLog('All pending staff were marked as present.', 'success')
+    addLog('All available pending staff were marked as present.', 'success')
   }
 
-  const markAllAbsent = () => {
-    attendance.value.forEach((item) => {
-      if (item.status === 'Pending') {
-        item.timeIn = ''
-        item.timeOut = ''
-        item.status = 'Absent'
-        item.remarks = item.remarks || 'Bulk marked absent by admin'
+  const markAllAbsent = async () => {
+    for (const item of attendance.value) {
+      if (!isAbsentDisabled(item)) {
+        await markAbsent(item)
       }
-    })
+    }
 
-    addLog('All pending staff were marked as absent.', 'danger')
+    addLog('All available pending staff were marked as absent.', 'danger')
   }
 
-  const resetAttendance = () => {
-    attendance.value.forEach((item) => {
-      item.timeIn = ''
-      item.timeOut = ''
-      item.status = 'Pending'
-      item.remarks = ''
-    })
-
+  const resetAttendance = async () => {
+    await fetchAttendance()
     attendanceLogs.value = []
-
-    addLog('Attendance records were reset for the selected date.', 'warning')
+    addLog('Attendance records were refreshed for the selected date.', 'warning')
   }
 
   const isTimeInDisabled = (item) => {
@@ -379,6 +396,7 @@ export const useAttendance = () => {
 
   const exportReport = () => {
     const headers = [
+      'Employee ID',
       'Name',
       'Position',
       'Department',
@@ -390,6 +408,7 @@ export const useAttendance = () => {
     ]
 
     const rows = attendance.value.map((item) => [
+      item.employeeId,
       item.name,
       item.position,
       item.department,
@@ -402,7 +421,9 @@ export const useAttendance = () => {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(','))
+      ...rows.map((row) => {
+        return row.map((cell) => `"${cell}"`).join(',')
+      })
     ].join('\n')
 
     const blob = new Blob([csvContent], {
@@ -421,16 +442,31 @@ export const useAttendance = () => {
     addLog('Attendance report was exported.', 'success')
   }
 
+  watch(selectedDate, async () => {
+    await fetchAttendance()
+  })
+
+  fetchAttendance()
+
   return {
     selectedDate,
     search,
     selectedStatus,
+
+    attendance,
     attendanceLogs,
+    loading,
+    saving,
+    hasLoaded,
+
     filteredAttendance,
     summaryCards,
     formattedSelectedDate,
+
     getInitials,
     getRenderedHours,
+
+    fetchAttendance,
     timeIn,
     timeOut,
     markAbsent,
@@ -439,9 +475,11 @@ export const useAttendance = () => {
     markAllPresent,
     markAllAbsent,
     resetAttendance,
+
     isTimeInDisabled,
     isTimeOutDisabled,
     isAbsentDisabled,
+
     printAttendance,
     exportReport
   }

@@ -1,6 +1,6 @@
 <template>
   <div class="admin-layout">
-    <AdminResortLoader :show="pageLoading" />
+    <AdminResortLoader :show="isPageLoading" />
 
     <AdminSidebar />
 
@@ -49,26 +49,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useAdminSidebar } from '@/composables/useAdminSidebar'
 
 const route = useRoute()
 const nuxtApp = useNuxtApp()
 const { collapsed } = useAdminSidebar()
-
-const pageLoading = ref(false)
+const { isPageLoading, startPageLoading, stopPageLoading } = usePageLoader()
 
 const pageTitle = computed(() => route.meta.title || 'Dashboard')
 const pageSubtitle = computed(() => route.meta.subtitle || 'Welcome back to JANNS SPRING RESORT')
 
 nuxtApp.hook('page:start', () => {
-  pageLoading.value = true
+  startPageLoading()
 })
 
 nuxtApp.hook('page:finish', () => {
-  setTimeout(() => {
-    pageLoading.value = false
-  }, 500)
+  stopPageLoading(800)
 })
 </script>
 

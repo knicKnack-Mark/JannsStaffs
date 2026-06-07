@@ -39,7 +39,16 @@
               <td>
                 <div class="staff-info">
                   <div class="staff-avatar">
-                    {{ getInitials(item.name) }}
+                    <img
+                      v-if="item.image"
+                      :src="item.image"
+                      :alt="item.name"
+                      class="staff-avatar-img"
+                    >
+
+                    <span v-else>
+                      {{ getInitials(item.name) }}
+                    </span>
                   </div>
 
                   <div>
@@ -431,9 +440,32 @@ const getStatusClass = (status) => {
   color: #667085;
 }
 
+.staff-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #16a34a, #84cc16);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.staff-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 @media (max-width: 1200px) {
   .table-actions {
     min-width: 320px;
   }
 }
+
+
 </style>
