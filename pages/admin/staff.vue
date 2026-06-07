@@ -246,12 +246,14 @@
                 </div>
 
                 <div class="col-12 col-md-6">
-                  <label class="form-label">Avatar URL</label>
-                  <input
-                    v-model="editForm.avatar"
-                    type="text"
-                    class="form-control modal-input"
-                  />
+                  <label class="form-label">Staff Photo</label>
+
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png"
+                      class="form-control modal-input"
+                      @change="handleAvatarUpload"
+                    />
                 </div>
               </div>
 
@@ -286,17 +288,22 @@
 
 <script setup>
 import { computed, ref, onMounted, nextTick, watch } from 'vue'
+import { useToast } from 'vue-toastification'
 
 definePageMeta({
   title: 'Staff',
   subtitle: 'Manage staff attendance, records, and status'
 })
 
+const { apiFetch } = useApi()
+const toast = useToast()
+
 const search = ref('')
 const selectedStatus = ref('All')
 const selectedSalaryType = ref('All')
 const showAddStaffModal = ref(false)
 const showEditStaffModal = ref(false)
+const loading = ref(false)
 
 let observer = null
 
@@ -309,83 +316,71 @@ const editForm = ref({
   monthlySalary: 0,
   dailyRate: 0,
   status: 'Active',
-  avatar: ''
+  avatar: null
 })
 
-const staffList = ref([
-  {
-    id: 1001,
-    name: 'Maria Santos',
-    position: 'Front Desk Officer',
-    phone: '0917 123 4567',
-    salaryType: 'Monthly',
-    monthlySalary: 18000,
-    dailyRate: null,
-    status: 'Active',
-    attendance: 'Present',
-    avatar: 'https://i.pravatar.cc/300?img=32'
-  },
-  {
-    id: 1002,
-    name: 'Juan Dela Cruz',
-    position: 'Pool Attendant',
-    phone: '0918 234 5678',
-    salaryType: 'Daily',
-    monthlySalary: null,
-    dailyRate: 600,
-    status: 'Active',
-    attendance: 'Not Timed In',
-    avatar: 'https://i.pravatar.cc/300?img=12'
-  },
-  {
-    id: 1003,
-    name: 'Ana Reyes',
-    position: 'Housekeeping Staff',
-    phone: '0919 345 6789',
-    salaryType: 'Daily',
-    monthlySalary: null,
-    dailyRate: 580,
-    status: 'Active',
-    attendance: 'Absent',
-    avatar: 'https://i.pravatar.cc/300?img=45'
-  },
-  {
-    id: 1004,
-    name: 'Carlo Mendoza',
-    position: 'Maintenance Worker',
-    phone: '0920 456 7890',
-    salaryType: 'Monthly',
-    monthlySalary: 20000,
-    dailyRate: null,
-    status: 'Inactive',
-    attendance: 'Not Timed In',
-    avatar: 'https://i.pravatar.cc/300?img=15'
-  },
-  {
-    id: 1005,
-    name: 'Liza Aquino',
-    position: 'Cashier',
-    phone: '0921 567 8901',
-    salaryType: 'Monthly',
-    monthlySalary: 17000,
-    dailyRate: null,
-    status: 'Active',
-    attendance: 'Present',
-    avatar: 'https://i.pravatar.cc/300?img=26'
-  },
-  {
-    id: 1006,
-    name: 'Ramon Garcia',
-    position: 'Security Guard',
-    phone: '0922 678 9012',
-    salaryType: 'Daily',
-    monthlySalary: null,
-    dailyRate: 750,
-    status: 'Active',
-    attendance: 'Not Timed In',
-    avatar: 'https://i.pravatar.cc/300?img=53'
+const staffList = ref([])
+
+const normalizeStaff = (staff) => ({
+  id: staff.id,
+  name: staff.name,
+  position: staff.position,
+  phone: staff.phone,
+  salaryType: staff.salary_type,
+  monthlySalary: staff.monthly_salary,
+  dailyRate: staff.daily_rate,
+  status: staff.status,
+  attendance: staff.attendance,
+  avatar: staff.avatar
+})
+
+const buildFormData = (form) => {
+  const formData = new FormData()
+
+  formData.append('name', form.name)
+  formData.append('position', form.position)
+  formData.append('phone', form.phone || '')
+  formData.append('salary_type', form.salaryType)
+  formData.append('status', form.status)
+
+  if (form.salaryType === 'Monthly') {
+    formData.append('monthly_salary', form.monthlySalary || 0)
+    formData.append('daily_rate', '')
+  } else {
+    formData.append('daily_rate', form.dailyRate || 0)
+    formData.append('monthly_salary', '')
   }
-])
+
+  if (form.avatar instanceof File) {
+    formData.append('avatar', form.avatar)
+  }
+
+  return formData
+}
+
+const handleAvatarUpload = (event) => {
+  const file = event.target.files?.[0]
+
+  if (file) {
+    editForm.value.avatar = file
+  }
+}
+
+const fetchStaff = async () => {
+  try {
+    loading.value = true
+
+    const res = await apiFetch('/staff')
+    staffList.value = (res.data || []).map(normalizeStaff)
+
+    await observeScrollItems()
+  } catch (err) {
+    console.error(err)
+    toast.error(err?.data?.message || 'Failed to load staff.')
+  } finally {
+    loading.value = false
+  }
+}
 
 const filteredStaff = computed(() => {
   const keyword = search.value.toLowerCase()
@@ -394,7 +389,7 @@ const filteredStaff = computed(() => {
     const matchesSearch =
       staff.name.toLowerCase().includes(keyword) ||
       staff.position.toLowerCase().includes(keyword) ||
-      staff.phone.toLowerCase().includes(keyword)
+      staff.phone?.toLowerCase().includes(keyword)
 
     const matchesStatus =
       selectedStatus.value === 'All' ||
@@ -469,12 +464,10 @@ onMounted(async () => {
         }
       })
     },
-    {
-      threshold: 0.15
-    }
+    { threshold: 0.15 }
   )
 
-  await observeScrollItems()
+  await fetchStaff()
 })
 
 watch(
@@ -503,7 +496,7 @@ const openEditStaffModal = (staff) => {
     monthlySalary: staff.monthlySalary || 0,
     dailyRate: staff.dailyRate || 0,
     status: staff.status,
-    avatar: staff.avatar
+    avatar: null
   }
 
   showEditStaffModal.value = true
@@ -521,77 +514,93 @@ const closeEditStaffModal = () => {
     monthlySalary: 0,
     dailyRate: 0,
     status: 'Active',
-    avatar: ''
+    avatar: null
   }
 }
 
-const addStaff = (form) => {
-  const newId = staffList.value.length
-    ? Math.max(...staffList.value.map(staff => staff.id)) + 1
-    : 1001
+const addStaff = async (form) => {
+  try {
+    const payload = buildFormData(form)
 
-  const newStaff = {
-    id: newId,
-    name: form.name,
-    position: form.position,
-    phone: form.phone,
-    salaryType: form.salaryType,
-    monthlySalary: form.salaryType === 'Monthly' ? Number(form.monthlySalary || 0) : null,
-    dailyRate: form.salaryType === 'Daily' ? Number(form.dailyRate || 0) : null,
-    status: form.status,
-    attendance: 'Not Timed In',
-    avatar: form.avatar
-      ? `https://i.pravatar.cc/300?img=${form.avatar}`
-      : 'https://i.pravatar.cc/300?img=1'
+    const res = await apiFetch('/staff', {
+      method: 'POST',
+      body: payload
+    })
+
+    staffList.value.unshift(normalizeStaff(res.data))
+    closeAddStaffModal()
+    toast.success(res.message)
+  } catch (err) {
+    console.error(err)
+    toast.error(err?.data?.message || 'Failed to add staff.')
   }
-
-  staffList.value.unshift(newStaff)
-  closeAddStaffModal()
 }
 
-const updateStaff = () => {
-  const index = staffList.value.findIndex(staff => staff.id === editForm.value.id)
+const updateStaff = async () => {
+  try {
+    const payload = buildFormData(editForm.value)
+    payload.append('_method', 'PUT')
 
-  if (index === -1) {
-    return
+    const res = await apiFetch(`/staff/${editForm.value.id}`, {
+      method: 'POST',
+      body: payload
+    })
+
+    const index = staffList.value.findIndex(staff => staff.id === editForm.value.id)
+
+    if (index !== -1) {
+      staffList.value[index] = normalizeStaff(res.data)
+    }
+
+    closeEditStaffModal()
+    toast.success(res.message)
+  } catch (err) {
+    console.error(err)
+    toast.error(err?.data?.message || 'Failed to update staff.')
   }
+}
 
-  staffList.value[index] = {
-    ...staffList.value[index],
-    name: editForm.value.name,
-    position: editForm.value.position,
-    phone: editForm.value.phone,
-    salaryType: editForm.value.salaryType,
-    monthlySalary: editForm.value.salaryType === 'Monthly'
-      ? Number(editForm.value.monthlySalary || 0)
-      : null,
-    dailyRate: editForm.value.salaryType === 'Daily'
-      ? Number(editForm.value.dailyRate || 0)
-      : null,
-    status: editForm.value.status,
-    avatar: editForm.value.avatar || staffList.value[index].avatar,
-    attendance: editForm.value.status === 'Inactive'
+const updateStaffField = async (staff, payload) => {
+  try {
+    const res = await apiFetch(`/staff/${staff.id}`, {
+      method: 'PATCH',
+      body: payload
+    })
+
+    const index = staffList.value.findIndex(item => item.id === staff.id)
+
+    if (index !== -1) {
+      staffList.value[index] = normalizeStaff(res.data)
+    }
+
+    toast.success(res.message)
+  } catch (err) {
+    console.error(err)
+    toast.error(err?.data?.message || 'Failed to update staff.')
+  }
+}
+
+const markTimeIn = async (staff) => {
+  await updateStaffField(staff, {
+    attendance: 'Present'
+  })
+}
+
+const markAbsent = async (staff) => {
+  await updateStaffField(staff, {
+    attendance: 'Absent'
+  })
+}
+
+const toggleStatus = async (staff) => {
+  const newStatus = staff.status === 'Active' ? 'Inactive' : 'Active'
+
+  await updateStaffField(staff, {
+    status: newStatus,
+    attendance: newStatus === 'Inactive'
       ? 'Not Timed In'
-      : staffList.value[index].attendance
-  }
-
-  closeEditStaffModal()
-}
-
-const markTimeIn = (staff) => {
-  staff.attendance = 'Present'
-}
-
-const markAbsent = (staff) => {
-  staff.attendance = 'Absent'
-}
-
-const toggleStatus = (staff) => {
-  staff.status = staff.status === 'Active' ? 'Inactive' : 'Active'
-
-  if (staff.status === 'Inactive') {
-    staff.attendance = 'Not Timed In'
-  }
+      : staff.attendance
+  })
 }
 </script>
 
