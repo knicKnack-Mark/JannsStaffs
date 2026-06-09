@@ -1,43 +1,10 @@
 <template>
   <div class="admin-settings-page">
-
-    <!-- SETTINGS TABS -->
-    <section class="mb-4 fade-slide-up delay-1">
-      <div class="settings-tabs-wrapper">
-        <div class="settings-tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            class="settings-tab"
-            :class="{ active: activeTab === tab.key }"
-            @click="activeTab = tab.key"
-          >
-            <Icon
-              :name="tab.icon"
-              size="22"
-            />
-
-            <span>
-              {{ tab.label }}
-            </span>
-          </button>
-        </div>
-
-        <button
-          type="button"
-          class="btn save-settings-btn"
-          @click="saveSettings"
-        >
-          <Icon
-            name="solar:diskette-bold-duotone"
-            size="20"
-          />
-
-          <span>Save Changes</span>
-        </button>
-      </div>
-    </section>
+    <AdminSettingsTabs
+      v-model="activeTab"
+      :tabs="tabs"
+      @save="saveSettings"
+    />
 
     <!-- PROFILE SETTINGS -->
     <section
@@ -72,100 +39,48 @@
         </div>
 
         <div class="col-xl-8">
-          <div class="settings-card">
-            <div class="card-title-wrapper">
-              <div>
-                <h5>
-                  Admin Profile
-                </h5>
+          <AdminSettingsCard
+            title="Admin Profile"
+            description="Update the admin account information."
+            icon="solar:user-id-bold-duotone"
+          >
+            <div class="row g-3">
+              <AdminSettingsField
+                v-model="profile.name"
+                label="Admin Name"
+              />
 
-                <p>
-                  Update the admin account information.
-                </p>
-              </div>
+              <AdminSettingsField
+                v-model="profile.username"
+                label="Username"
+              />
 
-              <Icon
-                name="solar:user-id-bold-duotone"
-                size="34"
+              <AdminSettingsField
+                v-model="profile.email"
+                label="Email Address"
+                type="email"
+              />
+
+              <AdminSettingsField
+                v-model="profile.contact"
+                label="Contact Number"
+              />
+
+              <AdminSettingsField
+                v-model="profile.password"
+                label="New Password"
+                type="password"
+                placeholder="Enter new password"
+              />
+
+              <AdminSettingsField
+                v-model="profile.confirmPassword"
+                label="Confirm Password"
+                type="password"
+                placeholder="Confirm new password"
               />
             </div>
-
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">
-                  Admin Name
-                </label>
-
-                <input
-                  v-model="profile.name"
-                  type="text"
-                  class="form-control custom-input"
-                />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">
-                  Username
-                </label>
-
-                <input
-                  v-model="profile.username"
-                  type="text"
-                  class="form-control custom-input"
-                />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">
-                  Email Address
-                </label>
-
-                <input
-                  v-model="profile.email"
-                  type="email"
-                  class="form-control custom-input"
-                />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">
-                  Contact Number
-                </label>
-
-                <input
-                  v-model="profile.contact"
-                  type="text"
-                  class="form-control custom-input"
-                />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">
-                  New Password
-                </label>
-
-                <input
-                  v-model="profile.password"
-                  type="password"
-                  class="form-control custom-input"
-                  placeholder="Enter new password"
-                />
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">
-                  Confirm Password
-                </label>
-
-                <input
-                  v-model="profile.confirmPassword"
-                  type="password"
-                  class="form-control custom-input"
-                  placeholder="Confirm new password"
-                />
-              </div>
-            </div>
-          </div>
+          </AdminSettingsCard>
         </div>
       </div>
     </section>
@@ -175,100 +90,44 @@
       v-if="activeTab === 'system'"
       class="fade-slide-up delay-2"
     >
-      <div class="settings-card">
-        <div class="card-title-wrapper">
-          <div>
-            <h5>
-              System Settings
-            </h5>
+      <AdminSettingsCard
+        title="System Settings"
+        description="Basic configuration for JANNS SPRING RESORT staff system."
+        icon="solar:settings-bold-duotone"
+      >
+        <div class="row g-3">
+          <AdminSettingsField
+            v-model="system.name"
+            label="System Name"
+          />
 
-            <p>
-              Basic configuration for JANNS SPRING RESORT staff system.
-            </p>
-          </div>
+          <AdminSettingsField
+            v-model="system.type"
+            label="System Type"
+          />
 
-          <Icon
-            name="solar:settings-bold-duotone"
-            size="34"
+          <AdminSettingsField
+            v-model="system.currency"
+            label="Default Currency"
+            type="select"
+            :options="currencyOptions"
+          />
+
+          <AdminSettingsField
+            v-model="system.timezone"
+            label="Timezone"
+            type="select"
+            :options="timezoneOptions"
+          />
+
+          <AdminSettingsField
+            v-model="system.description"
+            label="System Description"
+            type="textarea"
+            column-class="col-12"
           />
         </div>
-
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">
-              System Name
-            </label>
-
-            <input
-              v-model="system.name"
-              type="text"
-              class="form-control custom-input"
-            />
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              System Type
-            </label>
-
-            <input
-              v-model="system.type"
-              type="text"
-              class="form-control custom-input"
-            />
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Default Currency
-            </label>
-
-            <select
-              v-model="system.currency"
-              class="form-select custom-input"
-            >
-              <option value="PHP">
-                PHP - Philippine Peso
-              </option>
-
-              <option value="USD">
-                USD - US Dollar
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Timezone
-            </label>
-
-            <select
-              v-model="system.timezone"
-              class="form-select custom-input"
-            >
-              <option value="Asia/Manila">
-                Asia/Manila
-              </option>
-
-              <option value="UTC">
-                UTC
-              </option>
-            </select>
-          </div>
-
-          <div class="col-12">
-            <label class="form-label">
-              System Description
-            </label>
-
-            <textarea
-              v-model="system.description"
-              class="form-control custom-textarea"
-              rows="4"
-            />
-          </div>
-        </div>
-      </div>
+      </AdminSettingsCard>
     </section>
 
     <!-- ATTENDANCE SETTINGS -->
@@ -276,119 +135,51 @@
       v-if="activeTab === 'attendance'"
       class="fade-slide-up delay-2"
     >
-      <div class="settings-card">
-        <div class="card-title-wrapper">
-          <div>
-            <h5>
-              Attendance Settings
-            </h5>
-
-            <p>
-              Set work schedule, late rules, and attendance status behavior.
-            </p>
-          </div>
-
-          <Icon
-            name="solar:calendar-bold-duotone"
-            size="34"
-          />
-        </div>
-
+      <AdminSettingsCard
+        title="Attendance Settings"
+        description="Set work schedule, late rules, and attendance status behavior."
+        icon="solar:calendar-bold-duotone"
+      >
         <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">
-              Work Start Time
-            </label>
+          <AdminSettingsField
+            v-model="attendance.workStart"
+            label="Work Start Time"
+            type="time"
+          />
 
-            <input
-              v-model="attendance.workStart"
-              type="time"
-              class="form-control custom-input"
-            />
-          </div>
+          <AdminSettingsField
+            v-model="attendance.workEnd"
+            label="Work End Time"
+            type="time"
+          />
 
-          <div class="col-md-6">
-            <label class="form-label">
-              Work End Time
-            </label>
+          <AdminSettingsField
+            v-model="attendance.gracePeriod"
+            label="Late Grace Period"
+            type="number"
+            suffix="minutes"
+            number
+          />
 
-            <input
-              v-model="attendance.workEnd"
-              type="time"
-              class="form-control custom-input"
-            />
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Late Grace Period
-            </label>
-
-            <div class="input-group">
-              <input
-                v-model.number="attendance.gracePeriod"
-                type="number"
-                class="form-control custom-input"
-              />
-
-              <span class="input-group-text">
-                minutes
-              </span>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Default Attendance Status
-            </label>
-
-            <select
-              v-model="attendance.defaultStatus"
-              class="form-select custom-input"
-            >
-              <option value="Present">
-                Present
-              </option>
-
-              <option value="Absent">
-                Absent
-              </option>
-
-              <option value="Late">
-                Late
-              </option>
-
-              <option value="Not Timed In">
-                Not Timed In
-              </option>
-            </select>
-          </div>
+          <AdminSettingsField
+            v-model="attendance.defaultStatus"
+            label="Default Attendance Status"
+            type="select"
+            :options="attendanceStatusOptions"
+          />
 
           <div class="col-12">
             <label class="form-label">
               Working Days
             </label>
 
-            <div class="working-days">
-              <label
-                v-for="day in days"
-                :key="day"
-                class="day-check"
-              >
-                <input
-                  v-model="attendance.workingDays"
-                  type="checkbox"
-                  :value="day"
-                />
-
-                <span>
-                  {{ day }}
-                </span>
-              </label>
-            </div>
+            <AdminWorkingDaysPicker
+              v-model="attendance.workingDays"
+              :days="days"
+            />
           </div>
         </div>
-      </div>
+      </AdminSettingsCard>
     </section>
 
     <!-- PAYROLL SETTINGS -->
@@ -396,150 +187,76 @@
       v-if="activeTab === 'payroll'"
       class="fade-slide-up delay-2"
     >
-      <div class="settings-card">
-        <div class="card-title-wrapper">
-          <div>
-            <h5>
-              Payroll Settings
-            </h5>
+      <AdminSettingsCard
+        title="Payroll Settings"
+        description="Configure payroll cycle, salary rules, deductions, and overtime."
+        icon="solar:wallet-money-bold-duotone"
+      >
+        <div class="row g-3">
+          <AdminSettingsField
+            v-model="payroll.cycle"
+            label="Payroll Cycle"
+            type="select"
+            :options="payrollCycleOptions"
+          />
 
-            <p>
-              Configure payroll cycle, salary rules, deductions, and overtime.
-            </p>
-          </div>
+          <AdminSettingsField
+            v-model="payroll.salaryType"
+            label="Default Salary Type"
+            type="select"
+            :options="salaryTypeOptions"
+          />
 
-          <Icon
-            name="solar:wallet-money-bold-duotone"
-            size="34"
+          <AdminSettingsField
+            v-model="payroll.overtimeRate"
+            label="Overtime Rate"
+            type="number"
+            prefix="₱"
+            suffix="/ hour"
+            number
+          />
+
+          <AdminSettingsField
+            v-model="payroll.holidayRate"
+            label="Holiday Rate Multiplier"
+            type="number"
+            suffix="x"
+            step="0.1"
+            number
+          />
+
+          <AdminSettingsField
+            v-model="payroll.sssDeduction"
+            label="SSS Deduction"
+            type="number"
+            prefix="₱"
+            number
+          />
+
+          <AdminSettingsField
+            v-model="payroll.philHealthDeduction"
+            label="PhilHealth Deduction"
+            type="number"
+            prefix="₱"
+            number
+          />
+
+          <AdminSettingsField
+            v-model="payroll.pagIbigDeduction"
+            label="Pag-IBIG Deduction"
+            type="number"
+            prefix="₱"
+            number
+          />
+
+          <AdminSettingsField
+            v-model="payroll.autoPaid"
+            label="Auto Mark Payroll as Paid"
+            type="select"
+            :options="autoPaidOptions"
           />
         </div>
-
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">
-              Payroll Cycle
-            </label>
-
-            <select
-              v-model="payroll.cycle"
-              class="form-select custom-input"
-            >
-              <option value="Monthly">
-                Monthly
-              </option>
-
-              <option value="Weekly">
-                Weekly
-              </option>
-
-              <option value="Daily">
-                Daily
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Default Salary Type
-            </label>
-
-            <select
-              v-model="payroll.salaryType"
-              class="form-select custom-input"
-            >
-              <option value="Monthly">
-                Monthly
-              </option>
-
-              <option value="Daily">
-                Daily
-              </option>
-
-              <option value="Hourly">
-                Hourly
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Overtime Rate
-            </label>
-
-            <div class="input-group">
-              <span class="input-group-text">
-                ₱
-              </span>
-
-              <input
-                v-model.number="payroll.overtimeRate"
-                type="number"
-                class="form-control custom-input"
-              />
-
-              <span class="input-group-text">
-                / hour
-              </span>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Holiday Rate Multiplier
-            </label>
-
-            <div class="input-group">
-              <input
-                v-model.number="payroll.holidayRate"
-                type="number"
-                step="0.1"
-                class="form-control custom-input"
-              />
-
-              <span class="input-group-text">
-                x
-              </span>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Default Deduction
-            </label>
-
-            <div class="input-group">
-              <span class="input-group-text">
-                ₱
-              </span>
-
-              <input
-                v-model.number="payroll.defaultDeduction"
-                type="number"
-                class="form-control custom-input"
-              />
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <label class="form-label">
-              Auto Mark Payroll as Paid
-            </label>
-
-            <select
-              v-model="payroll.autoPaid"
-              class="form-select custom-input"
-            >
-              <option :value="true">
-                Enabled
-              </option>
-
-              <option :value="false">
-                Disabled
-              </option>
-            </select>
-          </div>
-        </div>
-      </div>
+      </AdminSettingsCard>
     </section>
 
     <!-- DEPARTMENTS SETTINGS -->
@@ -549,127 +266,27 @@
     >
       <div class="row g-4">
         <div class="col-xl-6">
-          <div class="settings-card">
-            <div class="card-title-wrapper">
-              <div>
-                <h5>
-                  Departments
-                </h5>
-
-                <p>
-                  Manage staff department options.
-                </p>
-              </div>
-
-              <Icon
-                name="solar:buildings-2-bold-duotone"
-                size="34"
-              />
-            </div>
-
-            <div class="add-row mb-3">
-              <input
-                v-model="newDepartment"
-                type="text"
-                class="form-control custom-input"
-                placeholder="Add department"
-                @keyup.enter="addDepartment"
-              />
-
-              <button
-                type="button"
-                class="btn btn-add"
-                @click="addDepartment"
-              >
-                Add
-              </button>
-            </div>
-
-            <div class="list-wrapper">
-              <div
-                v-for="department in departments"
-                :key="department"
-                class="settings-list-item"
-              >
-                <span>
-                  {{ department }}
-                </span>
-
-                <button
-                  type="button"
-                  class="btn-icon danger"
-                  @click="removeDepartment(department)"
-                >
-                  <Icon
-                    name="solar:trash-bin-trash-bold-duotone"
-                    size="20"
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminSettingsOptionList
+            title="Departments"
+            description="Manage staff department options."
+            icon="solar:buildings-2-bold-duotone"
+            placeholder="Add department"
+            :items="departments"
+            @add="addDepartment"
+            @remove="removeDepartment"
+          />
         </div>
 
         <div class="col-xl-6">
-          <div class="settings-card">
-            <div class="card-title-wrapper">
-              <div>
-                <h5>
-                  Positions
-                </h5>
-
-                <p>
-                  Manage staff position options.
-                </p>
-              </div>
-
-              <Icon
-                name="solar:user-id-bold-duotone"
-                size="34"
-              />
-            </div>
-
-            <div class="add-row mb-3">
-              <input
-                v-model="newPosition"
-                type="text"
-                class="form-control custom-input"
-                placeholder="Add position"
-                @keyup.enter="addPosition"
-              />
-
-              <button
-                type="button"
-                class="btn btn-add"
-                @click="addPosition"
-              >
-                Add
-              </button>
-            </div>
-
-            <div class="list-wrapper">
-              <div
-                v-for="position in positions"
-                :key="position"
-                class="settings-list-item"
-              >
-                <span>
-                  {{ position }}
-                </span>
-
-                <button
-                  type="button"
-                  class="btn-icon danger"
-                  @click="removePosition(position)"
-                >
-                  <Icon
-                    name="solar:trash-bin-trash-bold-duotone"
-                    size="20"
-                  />
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminSettingsOptionList
+            title="Positions"
+            description="Manage staff position options."
+            icon="solar:user-id-bold-duotone"
+            placeholder="Add position"
+            :items="positions"
+            @add="addPosition"
+            @remove="removePosition"
+          />
         </div>
       </div>
     </section>
@@ -706,25 +323,21 @@ const tabs = [
     label: 'Profile',
     icon: 'solar:user-bold-duotone'
   },
-
   {
     key: 'system',
     label: 'System',
     icon: 'solar:settings-bold-duotone'
   },
-
   {
     key: 'attendance',
     label: 'Attendance',
     icon: 'solar:calendar-bold-duotone'
   },
-
   {
     key: 'payroll',
     label: 'Payroll',
     icon: 'solar:wallet-money-bold-duotone'
   },
-
   {
     key: 'departments',
     label: 'Departments',
@@ -769,7 +382,9 @@ const payroll = ref({
   salaryType: 'Monthly',
   overtimeRate: 100,
   holidayRate: 2,
-  defaultDeduction: 0,
+  sssDeduction: 0,
+  philHealthDeduction: 0,
+  pagIbigDeduction: 0,
   autoPaid: false
 })
 
@@ -799,39 +414,102 @@ const positions = ref([
   'Staff'
 ])
 
-const newDepartment = ref('')
-const newPosition = ref('')
-
-const addDepartment = () => {
-  const value = newDepartment.value.trim()
-
-  if (!value) {
-    return
+const currencyOptions = [
+  {
+    label: 'PHP - Philippine Peso',
+    value: 'PHP'
+  },
+  {
+    label: 'USD - US Dollar',
+    value: 'USD'
   }
+]
 
+const timezoneOptions = [
+  {
+    label: 'Asia/Manila',
+    value: 'Asia/Manila'
+  },
+  {
+    label: 'UTC',
+    value: 'UTC'
+  }
+]
+
+const attendanceStatusOptions = [
+  {
+    label: 'Present',
+    value: 'Present'
+  },
+  {
+    label: 'Absent',
+    value: 'Absent'
+  },
+  {
+    label: 'Late',
+    value: 'Late'
+  },
+  {
+    label: 'Not Timed In',
+    value: 'Not Timed In'
+  }
+]
+
+const payrollCycleOptions = [
+  {
+    label: 'Monthly',
+    value: 'Monthly'
+  },
+  {
+    label: 'Weekly',
+    value: 'Weekly'
+  },
+  {
+    label: 'Daily',
+    value: 'Daily'
+  }
+]
+
+const salaryTypeOptions = [
+  {
+    label: 'Monthly',
+    value: 'Monthly'
+  },
+  {
+    label: 'Daily',
+    value: 'Daily'
+  },
+  {
+    label: 'Hourly',
+    value: 'Hourly'
+  }
+]
+
+const autoPaidOptions = [
+  {
+    label: 'Enabled',
+    value: true
+  },
+  {
+    label: 'Disabled',
+    value: false
+  }
+]
+
+const addDepartment = (value) => {
   if (!departments.value.includes(value)) {
     departments.value.push(value)
   }
-
-  newDepartment.value = ''
 }
 
 const removeDepartment = (department) => {
   departments.value = departments.value.filter((item) => item !== department)
 }
 
-const addPosition = () => {
-  const value = newPosition.value.trim()
-
-  if (!value) {
-    return
-  }
-
+const addPosition = (value) => {
   if (!positions.value.includes(value)) {
     positions.value.push(value)
   }
-
-  newPosition.value = ''
 }
 
 const removePosition = (position) => {
@@ -862,156 +540,32 @@ const saveSettings = () => {
   animation: pageFadeIn 0.35s ease both;
 }
 
-/* TABS */
-.settings-tabs-wrapper {
-  background: white;
-
-  border-radius: 26px;
-
-  padding: 10px;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
-}
-
-.settings-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.settings-tab {
-  min-height: 52px;
-
-  padding: 0 18px;
-
-  border: none;
-
-  border-radius: 17px;
-
-  background: transparent;
-
-  color: #64748b;
-
-  font-weight: 800;
-
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  transition: all 0.25s ease;
-}
-
-.settings-tab:hover {
-  background: #f4f8f7;
-  color: #0b5b54;
-}
-
-.settings-tab.active {
-  background: linear-gradient(180deg, #0b5b54, #148b80);
-  color: white;
-  box-shadow: 0 12px 24px rgba(11, 91, 84, 0.22);
-}
-
-.save-settings-btn {
-  height: 52px;
-
-  padding: 0 22px;
-
-  border: none;
-  border-radius: 17px;
-
-  background: linear-gradient(180deg, #0b5b54, #148b80);
-
-  color: white;
-  font-weight: 800;
-
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-
-  white-space: nowrap;
-
-  box-shadow: 0 12px 24px rgba(11, 91, 84, 0.22);
-
-  transition: all 0.25s ease;
-}
-
-.save-settings-btn:hover {
-  color: white;
-  transform: translateY(-1px);
-}
-
-.save-settings-btn:active {
-  transform: translateY(0);
-}
-
-/* CARD */
 .settings-card {
   background: white;
-
   border-radius: 26px;
-
   padding: 24px;
-
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
 }
 
-.card-title-wrapper {
-  margin-bottom: 22px;
-
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-
-  color: #0b5b54;
-}
-
-.card-title-wrapper h5 {
-  margin-bottom: 4px;
-
-  color: #143c3a;
-  font-weight: 800;
-}
-
-.card-title-wrapper p {
-  margin-bottom: 0;
-
-  color: #7b8a8a;
-}
-
-/* PROFILE */
 .profile-avatar {
   width: 118px;
   height: 118px;
-
   border-radius: 34px;
-
   background: linear-gradient(
     135deg,
     rgba(11, 91, 84, 0.12),
     rgba(20, 139, 128, 0.2)
   );
-
   color: #0b5b54;
-
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* BUTTONS */
 .btn-outline-main {
   height: 48px;
-
   border-radius: 16px;
   border: 1px solid rgba(11, 91, 84, 0.25);
-
   color: #0b5b54;
   font-weight: 800;
 }
@@ -1021,199 +575,28 @@ const saveSettings = () => {
   color: white;
 }
 
-.btn-add {
-  height: 50px;
-
-  padding: 0 20px;
-
-  border: none;
-  border-radius: 16px;
-
-  background: linear-gradient(180deg, #0b5b54, #148b80);
-
-  color: white;
-  font-weight: 800;
-}
-
-.btn-add:hover {
-  color: white;
-  transform: translateY(-1px);
-}
-
-.btn-icon {
-  width: 40px;
-  height: 40px;
-
-  border: none;
-
-  border-radius: 14px;
-
-  background: #f4f8f7;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-icon.danger {
-  color: #dc3545;
-}
-
-.btn-icon.danger:hover {
-  background: rgba(220, 53, 69, 0.1);
-}
-
-/* INPUTS */
-.form-label {
-  color: #334155;
-
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-
-.custom-input,
-.custom-textarea {
-  border: none;
-
-  border-radius: 16px;
-
-  background: #f4f8f7;
-
-  box-shadow: none;
-}
-
-.custom-input {
-  height: 50px;
-}
-
-.custom-textarea {
-  resize: none;
-  padding: 14px 16px;
-}
-
-.custom-input:focus,
-.custom-textarea:focus {
-  background: #f4f8f7;
-  box-shadow: 0 0 0 3px rgba(20, 139, 128, 0.12);
-}
-
-.input-group-text {
-  border: none;
-
-  background: #eaf3f2;
-
-  color: #0b5b54;
-  font-weight: 800;
-}
-
-/* WORKING DAYS */
-.working-days {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.day-check {
-  cursor: pointer;
-}
-
-.day-check input {
-  display: none;
-}
-
-.day-check span {
-  min-height: 44px;
-
-  padding: 0 16px;
-
-  border-radius: 15px;
-
-  background: #f4f8f7;
-
-  color: #526766;
-
-  font-weight: 800;
-
-  display: flex;
-  align-items: center;
-
-  transition: all 0.25s ease;
-}
-
-.day-check input:checked + span {
-  background: linear-gradient(180deg, #0b5b54, #148b80);
-  color: white;
-}
-
-/* LIST */
-.add-row {
-  display: flex;
-  gap: 10px;
-}
-
-.list-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.settings-list-item {
-  min-height: 58px;
-
-  padding: 10px 14px;
-
-  border-radius: 17px;
-
-  background: #f4f8f7;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.settings-list-item span {
-  color: #334155;
-  font-weight: 800;
-}
-
-/* ALERT */
 .save-alert {
   position: fixed;
-
   right: 28px;
   bottom: 28px;
-
   z-index: 99999;
-
   padding: 16px 20px;
-
   border-radius: 18px;
-
   background: #0b5b54;
-
   color: white;
   font-weight: 800;
-
   display: flex;
   align-items: center;
   gap: 10px;
-
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
-
   animation: toastSlide 0.3s ease both;
 }
 
-/* ANIMATION */
 .fade-slide-up {
   opacity: 0;
   transform: translateY(22px);
   animation: fadeSlideUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   will-change: opacity, transform;
-}
-
-.delay-1 {
-  animation-delay: 0.05s;
 }
 
 .delay-2 {
@@ -1259,44 +642,11 @@ const saveSettings = () => {
   }
 }
 
-/* RESPONSIVE */
 @media (max-width: 767px) {
-  .settings-tabs-wrapper {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .settings-tabs {
-    width: 100%;
-  }
-
-  .settings-tab {
-    flex: 1 1 calc(50% - 10px);
-    justify-content: center;
-  }
-
-  .settings-tab span {
-    font-size: 0.9rem;
-  }
-
-  .save-settings-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .add-row {
-    flex-direction: column;
-  }
-
-  .btn-add {
-    width: 100%;
-  }
-
   .save-alert {
     left: 18px;
     right: 18px;
     bottom: 18px;
-
     justify-content: center;
   }
 }
