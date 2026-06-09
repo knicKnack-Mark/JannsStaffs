@@ -6,316 +6,290 @@
       @save="saveSettings"
     />
 
-    <!-- PROFILE SETTINGS -->
-    <section
-      v-if="activeTab === 'profile'"
-      class="fade-slide-up delay-2"
+    <div
+      v-if="loading"
+      class="settings-card text-center"
     >
-      <div class="row g-4">
-        <div class="col-xl-4">
-          <div class="settings-card text-center">
-            <div class="profile-avatar mx-auto mb-3">
-              <Icon
-                name="solar:user-bold-duotone"
-                size="54"
-              />
+      Loading settings...
+    </div>
+
+    <template v-else>
+      <!-- PROFILE SETTINGS -->
+      <section
+        v-if="activeTab === 'profile'"
+        class="fade-slide-up delay-2"
+      >
+        <div class="row g-4">
+          <div class="col-xl-4">
+            <div class="settings-card text-center">
+              <div class="profile-avatar mx-auto mb-3">
+                <Icon name="solar:user-bold-duotone" size="54" />
+              </div>
+
+              <h5 class="mb-1 fw-bold">
+                {{ profile.name }}
+              </h5>
+
+              <p class="text-muted mb-3">
+                Super Admin
+              </p>
+
+              <button
+                type="button"
+                class="btn btn-outline-main w-100"
+              >
+                Change Photo
+              </button>
             </div>
+          </div>
 
-            <h5 class="mb-1 fw-bold">
-              {{ profile.name }}
-            </h5>
-
-            <p class="text-muted mb-3">
-              Super Admin
-            </p>
-
-            <button
-              type="button"
-              class="btn btn-outline-main w-100"
+          <div class="col-xl-8">
+            <AdminSettingsCard
+              title="Admin Profile"
+              description="Update the admin account information."
+              icon="solar:user-id-bold-duotone"
             >
-              Change Photo
-            </button>
+              <div class="row g-3">
+                <AdminSettingsField v-model="profile.name" label="Admin Name" />
+                <AdminSettingsField v-model="profile.username" label="Username" />
+                <AdminSettingsField v-model="profile.email" label="Email Address" type="email" />
+                <AdminSettingsField v-model="profile.contact" label="Contact Number" />
+                <AdminSettingsField v-model="profile.password" label="New Password" type="password" placeholder="Enter new password" />
+                <AdminSettingsField v-model="profile.confirmPassword" label="Confirm Password" type="password" placeholder="Confirm new password" />
+              </div>
+            </AdminSettingsCard>
           </div>
         </div>
+      </section>
 
-        <div class="col-xl-8">
-          <AdminSettingsCard
-            title="Admin Profile"
-            description="Update the admin account information."
-            icon="solar:user-id-bold-duotone"
-          >
-            <div class="row g-3">
-              <AdminSettingsField
-                v-model="profile.name"
-                label="Admin Name"
-              />
+      <!-- SYSTEM SETTINGS -->
+      <section
+        v-if="activeTab === 'system'"
+        class="fade-slide-up delay-2"
+      >
+        <AdminSettingsCard
+          title="System Settings"
+          description="Basic configuration for JANNS SPRING RESORT staff system."
+          icon="solar:settings-bold-duotone"
+        >
+          <div class="row g-3">
+            <AdminSettingsField v-model="system.name" label="System Name" />
+            <AdminSettingsField v-model="system.type" label="System Type" />
 
-              <AdminSettingsField
-                v-model="profile.username"
-                label="Username"
-              />
+            <AdminSettingsField
+              v-model="system.currency"
+              label="Default Currency"
+              type="select"
+              :options="currencyOptions"
+            />
 
-              <AdminSettingsField
-                v-model="profile.email"
-                label="Email Address"
-                type="email"
-              />
+            <AdminSettingsField
+              v-model="system.timezone"
+              label="Timezone"
+              type="select"
+              :options="timezoneOptions"
+            />
 
-              <AdminSettingsField
-                v-model="profile.contact"
-                label="Contact Number"
-              />
+            <AdminSettingsField
+              v-model="system.description"
+              label="System Description"
+              type="textarea"
+              column-class="col-12"
+            />
+          </div>
+        </AdminSettingsCard>
+      </section>
 
-              <AdminSettingsField
-                v-model="profile.password"
-                label="New Password"
-                type="password"
-                placeholder="Enter new password"
-              />
+      <!-- ATTENDANCE SETTINGS -->
+      <section
+        v-if="activeTab === 'attendance'"
+        class="fade-slide-up delay-2"
+      >
+        <AdminSettingsCard
+          title="Attendance Settings"
+          description="Set work schedule, late rules, and attendance status behavior."
+          icon="solar:calendar-bold-duotone"
+        >
+          <div class="row g-3">
+            <AdminSettingsField v-model="attendance.workStart" label="Work Start Time" type="time" />
+            <AdminSettingsField v-model="attendance.workEnd" label="Work End Time" type="time" />
 
-              <AdminSettingsField
-                v-model="profile.confirmPassword"
-                label="Confirm Password"
-                type="password"
-                placeholder="Confirm new password"
+            <AdminSettingsField
+              v-model="attendance.gracePeriod"
+              label="Late Grace Period"
+              type="number"
+              suffix="minutes"
+              number
+            />
+
+            <AdminSettingsField
+              v-model="attendance.defaultStatus"
+              label="Default Attendance Status"
+              type="select"
+              :options="attendanceStatusOptions"
+            />
+
+            <div class="col-12">
+              <label class="form-label">
+                Working Days
+              </label>
+
+              <AdminWorkingDaysPicker
+                v-model="attendance.workingDays"
+                :days="days"
               />
             </div>
-          </AdminSettingsCard>
-        </div>
-      </div>
-    </section>
+          </div>
+        </AdminSettingsCard>
+      </section>
 
-    <!-- SYSTEM SETTINGS -->
-    <section
-      v-if="activeTab === 'system'"
-      class="fade-slide-up delay-2"
-    >
-      <AdminSettingsCard
-        title="System Settings"
-        description="Basic configuration for JANNS SPRING RESORT staff system."
-        icon="solar:settings-bold-duotone"
+      <!-- PAYROLL SETTINGS -->
+      <section
+        v-if="activeTab === 'payroll'"
+        class="fade-slide-up delay-2"
       >
-        <div class="row g-3">
-          <AdminSettingsField
-            v-model="system.name"
-            label="System Name"
-          />
+        <AdminSettingsCard
+          title="Payroll Settings"
+          description="Configure payroll cycle, salary rules, deductions, and overtime."
+          icon="solar:wallet-money-bold-duotone"
+        >
+          <div class="row g-3">
+            <AdminSettingsField
+              v-model="payroll.cycle"
+              label="Payroll Cycle"
+              type="select"
+              :options="payrollCycleOptions"
+            />
 
-          <AdminSettingsField
-            v-model="system.type"
-            label="System Type"
-          />
+            <AdminSettingsField
+              v-model="payroll.salaryType"
+              label="Default Salary Type"
+              type="select"
+              :options="salaryTypeOptions"
+            />
 
-          <AdminSettingsField
-            v-model="system.currency"
-            label="Default Currency"
-            type="select"
-            :options="currencyOptions"
-          />
+            <AdminSettingsField
+              v-model="payroll.overtimeRate"
+              label="Overtime Rate"
+              type="number"
+              prefix="₱"
+              suffix="/ hour"
+              number
+            />
 
-          <AdminSettingsField
-            v-model="system.timezone"
-            label="Timezone"
-            type="select"
-            :options="timezoneOptions"
-          />
+            <AdminSettingsField
+              v-model="payroll.holidayRate"
+              label="Holiday Rate Multiplier"
+              type="number"
+              suffix="x"
+              step="0.1"
+              number
+            />
 
-          <AdminSettingsField
-            v-model="system.description"
-            label="System Description"
-            type="textarea"
-            column-class="col-12"
-          />
-        </div>
-      </AdminSettingsCard>
-    </section>
+            <AdminSettingsField
+              v-model="payroll.sssDeduction"
+              label="SSS Deduction"
+              type="number"
+              prefix="₱"
+              number
+            />
 
-    <!-- ATTENDANCE SETTINGS -->
-    <section
-      v-if="activeTab === 'attendance'"
-      class="fade-slide-up delay-2"
-    >
-      <AdminSettingsCard
-        title="Attendance Settings"
-        description="Set work schedule, late rules, and attendance status behavior."
-        icon="solar:calendar-bold-duotone"
+            <AdminSettingsField
+              v-model="payroll.philHealthDeduction"
+              label="PhilHealth Deduction"
+              type="number"
+              prefix="₱"
+              number
+            />
+
+            <AdminSettingsField
+              v-model="payroll.pagIbigDeduction"
+              label="Pag-IBIG Deduction"
+              type="number"
+              prefix="₱"
+              number
+            />
+
+            <AdminSettingsField
+              v-model="payroll.autoPaid"
+              label="Auto Mark Payroll as Paid"
+              type="select"
+              :options="autoPaidOptions"
+            />
+          </div>
+        </AdminSettingsCard>
+      </section>
+
+      <!-- DEPARTMENTS SETTINGS -->
+      <section
+        v-if="activeTab === 'departments'"
+        class="fade-slide-up delay-2"
       >
-        <div class="row g-3">
-          <AdminSettingsField
-            v-model="attendance.workStart"
-            label="Work Start Time"
-            type="time"
-          />
+        <div class="row g-4">
+          <div class="col-xl-6">
+            <AdminSettingsOptionList
+              title="Departments"
+              description="Manage staff department options."
+              icon="solar:buildings-2-bold-duotone"
+              placeholder="Add department"
+              :items="departments"
+              @add="addDepartment"
+              @remove="removeDepartment"
+            />
+          </div>
 
-          <AdminSettingsField
-            v-model="attendance.workEnd"
-            label="Work End Time"
-            type="time"
-          />
-
-          <AdminSettingsField
-            v-model="attendance.gracePeriod"
-            label="Late Grace Period"
-            type="number"
-            suffix="minutes"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="attendance.defaultStatus"
-            label="Default Attendance Status"
-            type="select"
-            :options="attendanceStatusOptions"
-          />
-
-          <div class="col-12">
-            <label class="form-label">
-              Working Days
-            </label>
-
-            <AdminWorkingDaysPicker
-              v-model="attendance.workingDays"
-              :days="days"
+          <div class="col-xl-6">
+            <AdminSettingsOptionList
+              title="Positions"
+              description="Manage staff position options."
+              icon="solar:user-id-bold-duotone"
+              placeholder="Add position"
+              :items="positions"
+              @add="addPosition"
+              @remove="removePosition"
             />
           </div>
         </div>
-      </AdminSettingsCard>
-    </section>
+      </section>
+    </template>
 
-    <!-- PAYROLL SETTINGS -->
-    <section
-      v-if="activeTab === 'payroll'"
-      class="fade-slide-up delay-2"
-    >
-      <AdminSettingsCard
-        title="Payroll Settings"
-        description="Configure payroll cycle, salary rules, deductions, and overtime."
-        icon="solar:wallet-money-bold-duotone"
-      >
-        <div class="row g-3">
-          <AdminSettingsField
-            v-model="payroll.cycle"
-            label="Payroll Cycle"
-            type="select"
-            :options="payrollCycleOptions"
-          />
-
-          <AdminSettingsField
-            v-model="payroll.salaryType"
-            label="Default Salary Type"
-            type="select"
-            :options="salaryTypeOptions"
-          />
-
-          <AdminSettingsField
-            v-model="payroll.overtimeRate"
-            label="Overtime Rate"
-            type="number"
-            prefix="₱"
-            suffix="/ hour"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="payroll.holidayRate"
-            label="Holiday Rate Multiplier"
-            type="number"
-            suffix="x"
-            step="0.1"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="payroll.sssDeduction"
-            label="SSS Deduction"
-            type="number"
-            prefix="₱"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="payroll.philHealthDeduction"
-            label="PhilHealth Deduction"
-            type="number"
-            prefix="₱"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="payroll.pagIbigDeduction"
-            label="Pag-IBIG Deduction"
-            type="number"
-            prefix="₱"
-            number
-          />
-
-          <AdminSettingsField
-            v-model="payroll.autoPaid"
-            label="Auto Mark Payroll as Paid"
-            type="select"
-            :options="autoPaidOptions"
-          />
-        </div>
-      </AdminSettingsCard>
-    </section>
-
-    <!-- DEPARTMENTS SETTINGS -->
-    <section
-      v-if="activeTab === 'departments'"
-      class="fade-slide-up delay-2"
-    >
-      <div class="row g-4">
-        <div class="col-xl-6">
-          <AdminSettingsOptionList
-            title="Departments"
-            description="Manage staff department options."
-            icon="solar:buildings-2-bold-duotone"
-            placeholder="Add department"
-            :items="departments"
-            @add="addDepartment"
-            @remove="removeDepartment"
-          />
-        </div>
-
-        <div class="col-xl-6">
-          <AdminSettingsOptionList
-            title="Positions"
-            description="Manage staff position options."
-            icon="solar:user-id-bold-duotone"
-            placeholder="Add position"
-            :items="positions"
-            @add="addPosition"
-            @remove="removePosition"
-          />
-        </div>
-      </div>
-    </section>
-
-    <!-- SUCCESS ALERT -->
     <div
       v-if="showSuccess"
       class="save-alert"
     >
-      <Icon
-        name="solar:check-circle-bold-duotone"
-        size="22"
-      />
+      <Icon name="solar:check-circle-bold-duotone" size="22" />
+      <span>{{ successMessage }}</span>
+    </div>
 
-      <span>Settings saved successfully.</span>
+    <div
+      v-if="showError"
+      class="save-alert error"
+    >
+      <Icon name="solar:danger-circle-bold-duotone" size="22" />
+      <span>{{ errorMessage }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 
 definePageMeta({
   title: 'Settings',
   subtitle: 'Manage system preferences, attendance rules, and payroll configuration'
 })
 
+const { apiFetch } = useApi()
+
 const activeTab = ref('profile')
+const loading = ref(false)
+const saving = ref(false)
+
 const showSuccess = ref(false)
+const showError = ref(false)
+
+const successMessage = ref('Settings saved successfully.')
+const errorMessage = ref('Something went wrong.')
 
 const tabs = [
   {
@@ -496,6 +470,48 @@ const autoPaidOptions = [
   }
 ]
 
+const applySettings = (settings) => {
+  if (!settings) return
+
+  profile.value = {
+    ...profile.value,
+    ...(settings.profile || {})
+  }
+
+  system.value = {
+    ...system.value,
+    ...(settings.system || {})
+  }
+
+  attendance.value = {
+    ...attendance.value,
+    ...(settings.attendance || {})
+  }
+
+  payroll.value = {
+    ...payroll.value,
+    ...(settings.payroll || {})
+  }
+
+  departments.value = settings.departments || departments.value
+  positions.value = settings.positions || positions.value
+}
+
+const fetchSettings = async () => {
+  loading.value = true
+
+  try {
+    const response = await apiFetch('/settings')
+
+    applySettings(response.settings)
+  } catch (error) {
+    console.error(error)
+    showToast('error', 'Failed to load settings.')
+  } finally {
+    loading.value = false
+  }
+}
+
 const addDepartment = (value) => {
   if (!departments.value.includes(value)) {
     departments.value.push(value)
@@ -516,22 +532,54 @@ const removePosition = (position) => {
   positions.value = positions.value.filter((item) => item !== position)
 }
 
-const saveSettings = () => {
-  showSuccess.value = true
+const saveSettings = async () => {
+  if (saving.value) return
+
+  saving.value = true
+
+  try {
+    await apiFetch('/settings', {
+      method: 'PUT',
+      body: {
+        profile: profile.value,
+        system: system.value,
+        attendance: attendance.value,
+        payroll: payroll.value,
+        departments: departments.value,
+        positions: positions.value
+      }
+    })
+
+    showToast('success', 'Settings saved successfully.')
+  } catch (error) {
+    console.error(error)
+    showToast('error', 'Failed to save settings.')
+  } finally {
+    saving.value = false
+  }
+}
+
+const showToast = (type, message) => {
+  showSuccess.value = false
+  showError.value = false
+
+  if (type === 'success') {
+    successMessage.value = message
+    showSuccess.value = true
+  } else {
+    errorMessage.value = message
+    showError.value = true
+  }
 
   setTimeout(() => {
     showSuccess.value = false
+    showError.value = false
   }, 2500)
-
-  console.log({
-    profile: profile.value,
-    system: system.value,
-    attendance: attendance.value,
-    payroll: payroll.value,
-    departments: departments.value,
-    positions: positions.value
-  })
 }
+
+onMounted(() => {
+  fetchSettings()
+})
 </script>
 
 <style scoped>
@@ -590,6 +638,10 @@ const saveSettings = () => {
   gap: 10px;
   box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
   animation: toastSlide 0.3s ease both;
+}
+
+.save-alert.error {
+  background: #dc3545;
 }
 
 .fade-slide-up {
