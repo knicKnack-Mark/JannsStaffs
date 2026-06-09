@@ -1,189 +1,111 @@
 export const useDashboard = () => {
+  const { apiFetch } = useApi()
+
+  const loading = ref(false)
+
   const analytics = ref([
     {
       title: 'Total Staff',
-      value: 58,
+      value: 0,
       icon: 'solar:users-group-rounded-bold-duotone',
       color: 'green',
-      description: '+8 new employees'
+      description: 'No data yet'
     },
-
     {
       title: 'Present Today',
-      value: 51,
+      value: 0,
       icon: 'solar:user-check-bold-duotone',
       color: 'blue',
-      description: '92% attendance'
+      description: 'No data yet'
     },
-
     {
       title: 'Absent Today',
-      value: 7,
+      value: 0,
       icon: 'solar:user-cross-bold-duotone',
       color: 'red',
-      description: 'Needs monitoring'
+      description: 'No data yet'
     },
-
     {
       title: 'Salary Expenses',
-      value: '₱145K',
+      value: '₱0',
       icon: 'solar:wallet-money-bold-duotone',
       color: 'orange',
-      description: 'Monthly payroll'
+      description: 'No data yet'
     }
   ])
 
-const attendanceChart = ref({
-  weekly: {
-    labels: [
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun'
-    ],
-    present: [
-      51,
-      48,
-      54,
-      50,
-      56,
-      45,
-      52
-    ],
-    absent: [
-      7,
-      10,
-      4,
-      8,
-      2,
-      13,
-      6
-    ]
-  },
+  const attendanceChart = ref({
+    weekly: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      present: [0, 0, 0, 0, 0, 0, 0],
+      absent: [0, 0, 0, 0, 0, 0, 0]
+    },
+    monthly: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      present: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      absent: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    yearly: {
+      labels: ['2025', '2026', '2027', '2028', '2029', '2030'],
+      present: [0, 0, 0, 0, 0, 0],
+      absent: [0, 0, 0, 0, 0, 0]
+    }
+  })
 
-  monthly: {
-    labels: [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ],
-    present: [
-      1320,
-      1280,
-      1405,
-      1388,
-      1450,
-      1422,
-      1508,
-      1490,
-      1442,
-      1510,
-      1535,
-      1580
-    ],
-    absent: [
-      135,
-      128,
-      112,
-      118,
-      95,
-      104,
-      88,
-      92,
-      110,
-      86,
-      80,
-      74
-    ]
-  },
+  const quickStats = ref([
+    {
+      title: 'Payroll Processed',
+      value: '₱0',
+      icon: 'solar:dollar-bold-duotone'
+    },
+    {
+      title: 'Overtime Hours',
+      value: '0 hrs',
+      icon: 'solar:clock-circle-bold-duotone'
+    },
+    {
+      title: 'On Leave',
+      value: '0 Employees',
+      icon: 'solar:calendar-bold-duotone'
+    },
+    {
+      title: 'Maintenance Tasks',
+      value: '0 Pending',
+      icon: 'solar:settings-bold-duotone'
+    }
+  ])
 
-  yearly: {
-    labels: [
-      '2025',
-      '2026',
-      '2027',
-      '2028',
-      '2029',
-      '2030'
-    ],
-    present: [
-      14520,
-      15880,
-      16440,
-      17120,
-      17890,
-      18450
-    ],
-    absent: [
-      1260,
-      1040,
-      980,
-      920,
-      860,
-      790
-    ]
+  const activities = ref([])
+  const notifications = ref([])
+  const departments = ref([])
+
+  const fetchDashboard = async () => {
+    loading.value = true
+
+    try {
+      const response = await apiFetch('/admin/dashboard/stats')
+
+      analytics.value = response.analytics || analytics.value
+      attendanceChart.value = response.attendanceChart || attendanceChart.value
+      quickStats.value = response.quickStats || quickStats.value
+      activities.value = response.activities || []
+      notifications.value = response.notifications || []
+      departments.value = response.departments || []
+    } catch (error) {
+      console.error('Dashboard fetch error:', error)
+    } finally {
+      loading.value = false
+    }
   }
-})
-
-  const activities = ref([
-    {
-      title: 'John Dela Cruz timed in',
-      time: '2 minutes ago',
-      icon: 'solar:user-check-bold',
-      color: 'green'
-    },
-
-    {
-      title: 'Payroll processed successfully',
-      time: '20 minutes ago',
-      icon: 'solar:wallet-money-bold',
-      color: 'blue'
-    },
-
-    {
-      title: 'Inventory stock is running low',
-      time: '1 hour ago',
-      icon: 'solar:danger-bold',
-      color: 'red'
-    }
-  ])
-
-  const notifications = ref([
-    {
-      title: 'Payroll Deadline',
-      description: 'Payroll processing due tomorrow.',
-      color: 'warning'
-    },
-
-    {
-      title: 'Low Inventory',
-      description: 'Resort supplies are below threshold.',
-      color: 'danger'
-    },
-
-    {
-      title: 'Attendance Improved',
-      description: 'Staff attendance increased by 12%',
-      color: 'success'
-    }
-  ])
 
   return {
+    loading,
     analytics,
     attendanceChart,
+    quickStats,
     activities,
-    notifications
+    notifications,
+    departments,
+    fetchDashboard
   }
 }

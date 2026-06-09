@@ -4,46 +4,58 @@
       Notifications
     </h5>
 
-    <div
-      v-for="item in notifications"
-      :key="item.title"
-      class="notification-card"
-      :class="item.color"
-    >
-      <h6>
-        {{ item.title }}
-      </h6>
+    <div v-if="notifications.length">
+      <div
+        v-for="item in notifications"
+        :key="item.title"
+        class="notification-card"
+        :class="notificationColorClass(item.color)"
+      >
+        <h6>
+          {{ item.title }}
+        </h6>
 
-      <p>
-        {{ item.description }}
-      </p>
+        <p>
+          {{ item.description }}
+        </p>
+      </div>
+    </div>
+
+    <div
+      v-else
+      class="empty-state"
+    >
+      No notifications yet.
     </div>
   </div>
 </template>
 
 <script setup>
 defineProps({
-  notifications: Array
+  notifications: {
+    type: Array,
+    default: () => []
+  }
 })
+
+const allowedColors = ['warning', 'danger', 'success']
+
+const notificationColorClass = (color) => {
+  return allowedColors.includes(color) ? color : 'success'
+}
 </script>
 
 <style scoped>
 .dashboard-card {
   background: white;
-
   border-radius: 28px;
-
   padding: 28px;
-
-  box-shadow:
-    0 15px 35px rgba(0,0,0,0.06);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.06);
 }
 
 .notification-card {
   padding: 18px;
-
   border-radius: 18px;
-
   margin-bottom: 18px;
 }
 
@@ -57,5 +69,14 @@ defineProps({
 
 .success {
   background: rgba(22,163,74,0.12);
+}
+
+.empty-state {
+  padding: 18px;
+  border-radius: 18px;
+  background: #f8fbfa;
+  color: #7b8794;
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>

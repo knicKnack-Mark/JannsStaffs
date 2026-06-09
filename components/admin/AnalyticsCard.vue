@@ -2,55 +2,74 @@
   <div class="analytics-card">
     <div
       class="analytics-icon"
-      :class="`analytics-${color}`"
+      :class="iconColorClass"
     >
       <Icon
-        :name="icon"
+        :name="icon || defaultIcon"
         size="34"
       />
     </div>
 
     <div>
       <small>
-        {{ title }}
+        {{ title || 'No title' }}
       </small>
 
       <h2>
-        {{ value }}
+        {{ value ?? 0 }}
       </h2>
 
       <span>
-        {{ description }}
+        {{ description || 'No description available' }}
       </span>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
-  title: String,
-  value: [String, Number],
-  icon: String,
-  description: String,
-  color: String
+const props = defineProps({
+  title: {
+    type: String,
+    default: ''
+  },
+  value: {
+    type: [String, Number],
+    default: 0
+  },
+  icon: {
+    type: String,
+    default: ''
+  },
+  description: {
+    type: String,
+    default: ''
+  },
+  color: {
+    type: String,
+    default: 'green'
+  }
+})
+
+const defaultIcon = 'solar:chart-2-bold-duotone'
+
+const allowedColors = ['green', 'blue', 'red', 'orange']
+
+const iconColorClass = computed(() => {
+  return allowedColors.includes(props.color)
+    ? `analytics-${props.color}`
+    : 'analytics-green'
 })
 </script>
 
 <style scoped>
 .analytics-card {
   background: white;
-
   border-radius: 28px;
-
   padding: 24px;
-
   display: flex;
   align-items: center;
   gap: 18px;
-
-  box-shadow:
-    0 15px 35px rgba(0,0,0,0.06);
-
+  box-shadow: 0 15px 35px rgba(0,0,0,0.06);
   transition: 0.3s;
 }
 
@@ -61,9 +80,7 @@ defineProps({
 .analytics-icon {
   width: 70px;
   height: 70px;
-
   border-radius: 24px;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +109,6 @@ defineProps({
 h2 {
   font-size: 2rem;
   font-weight: 800;
-
   margin: 4px 0;
 }
 

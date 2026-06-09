@@ -1,83 +1,95 @@
 <template>
   <div class="admin-dashboard-page">
-    <!-- ANALYTICS -->
-    <section class="mb-4 dashboard-section fade-slide-up delay-1">
-      <div class="row g-4">
-        <div
-          v-for="(item, index) in analytics"
-          :key="item.title"
-          class="col-xl-3 col-md-6 fade-slide-up"
-          :style="{ animationDelay: `${0.08 + index * 0.08}s` }"
-        >
-          <AdminAnalyticsCard
-            :title="item.title"
-            :value="item.value"
-            :icon="item.icon"
-            :description="item.description"
-            :color="item.color"
-          />
-        </div>
-      </div>
-    </section>
+    <AdminResortLoader :show="loading" />
 
-    <!-- ATTENDANCE + QUICK STATS -->
-    <section class="mb-4 dashboard-section">
-      <div class="row g-4">
-        <!-- ATTENDANCE -->
-        <div class="col-xl-8 fade-slide-up delay-5">
-          <AdminAttendanceChart
-            :attendance-chart="attendanceChart"
-          />
+    <div v-if="!loading">
+      <!-- ANALYTICS -->
+      <section class="mb-4 dashboard-section fade-slide-up delay-1">
+        <div class="row g-4">
+          <div
+            v-for="(item, index) in analytics"
+            :key="item.title"
+            class="col-xl-3 col-md-6 fade-slide-up"
+            :style="{ animationDelay: `${0.08 + index * 0.08}s` }"
+          >
+            <AdminAnalyticsCard
+              :title="item.title"
+              :value="item.value"
+              :icon="item.icon"
+              :description="item.description"
+              :color="item.color"
+            />
+          </div>
         </div>
+      </section>
 
-        <!-- QUICK STATS -->
-        <div class="col-xl-4 fade-slide-up delay-6">
-          <AdminQuickStats />
-        </div>
-      </div>
-    </section>
+      <!-- ATTENDANCE + QUICK STATS -->
+      <section class="mb-4 dashboard-section">
+        <div class="row g-4">
+          <!-- ATTENDANCE -->
+          <div class="col-xl-8 fade-slide-up delay-5">
+            <AdminAttendanceChart
+              :attendance-chart="attendanceChart"
+            />
+          </div>
 
-    <!-- ACTIVITIES + NOTIFICATIONS -->
-    <section class="mb-4 dashboard-section">
-      <div class="row g-4">
-        <!-- ACTIVITIES -->
-        <div class="col-xl-7 fade-slide-up delay-7">
-          <AdminActivityFeed
-            :activities="activities"
-          />
+          <!-- QUICK STATS -->
+          <div class="col-xl-4 fade-slide-up delay-6">
+            <AdminQuickStats :stats="quickStats" />
+          </div>
         </div>
+      </section>
 
-        <!-- NOTIFICATIONS -->
-        <div class="col-xl-5 fade-slide-up delay-8">
-          <AdminNotificationsPanel
-            :notifications="notifications"
-          />
-        </div>
-      </div>
-    </section>
+      <!-- ACTIVITIES + NOTIFICATIONS -->
+      <section class="mb-4 dashboard-section">
+        <div class="row g-4">
+          <!-- ACTIVITIES -->
+          <div class="col-xl-7 fade-slide-up delay-7">
+            <AdminActivityFeed
+              :activities="activities"
+            />
+          </div>
 
-    <!-- DEPARTMENT + EXTRA -->
-    <section class="mb-4 dashboard-section">
-      <div class="row g-4">
-        <div class="col-xl-6 fade-slide-up delay-9">
-          <AdminDepartmentOverview />
+          <!-- NOTIFICATIONS -->
+          <div class="col-xl-5 fade-slide-up delay-8">
+            <AdminNotificationsPanel
+              :notifications="notifications"
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <!-- DEPARTMENT + EXTRA -->
+      <section class="mb-4 dashboard-section">
+        <div class="row g-4">
+          <div class="col-xl-6 fade-slide-up delay-9">
+            <AdminDepartmentOverview :departments="departments" />
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-definePageMeta({
-  layout: 'admin'
-})
+  definePageMeta({
+    layout: 'admin'
+  })
 
-const {
-  analytics,
-  attendanceChart,
-  activities,
-  notifications
-} = useDashboard()
+  const {
+    loading,
+    analytics,
+    attendanceChart,
+    quickStats,
+    activities,
+    notifications,
+    departments,
+    fetchDashboard
+  } = useDashboard()
+
+  onMounted(() => {
+    fetchDashboard()
+  })
 </script>
 
 <style scoped>
@@ -85,7 +97,6 @@ const {
   animation: pageFadeIn 0.35s ease both;
 }
 
-/* Main smooth animation */
 .fade-slide-up {
   opacity: 0;
   transform: translateY(22px);
@@ -93,7 +104,6 @@ const {
   will-change: opacity, transform;
 }
 
-/* Animation delays */
 .delay-1 {
   animation-delay: 0.05s;
 }
@@ -161,7 +171,6 @@ const {
   }
 }
 
-/* Better hover feel for dashboard children */
 :deep(.card) {
   transition:
     transform 0.25s ease,
@@ -172,7 +181,6 @@ const {
   transform: translateY(-3px);
 }
 
-/* Respect users who disable motion */
 @media (prefers-reduced-motion: reduce) {
   .admin-dashboard-page,
   .fade-slide-up {

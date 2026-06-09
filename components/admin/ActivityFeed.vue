@@ -5,75 +5,84 @@
     </h5>
 
     <div
-      v-for="activity in activities"
-      :key="activity.title"
-      class="activity-item"
+      v-if="activities.length"
     >
       <div
-        class="activity-icon"
-        :class="activity.color"
+        v-for="activity in activities"
+        :key="activity.title"
+        class="activity-item"
       >
-        <Icon
-          :name="activity.icon"
-          size="18"
-        />
-      </div>
+        <div
+          class="activity-icon"
+          :class="activityColorClass(activity.color)"
+        >
+          <Icon
+            :name="activity.icon || 'solar:info-circle-bold-duotone'"
+            size="18"
+          />
+        </div>
 
-      <div>
-        <h6>
-          {{ activity.title }}
-        </h6>
+        <div>
+          <h6>
+            {{ activity.title }}
+          </h6>
 
-        <small>
-          {{ activity.time }}
-        </small>
+          <small>
+            {{ activity.time }}
+          </small>
+        </div>
       </div>
+    </div>
+
+    <div
+      v-else
+      class="empty-state"
+    >
+      No recent activities yet.
     </div>
   </div>
 </template>
 
 <script setup>
 defineProps({
-  activities: Array
+  activities: {
+    type: Array,
+    default: () => []
+  }
 })
+
+const allowedColors = ['green', 'blue', 'red', 'orange']
+
+const activityColorClass = (color) => {
+  return allowedColors.includes(color) ? color : 'blue'
+}
 </script>
 
 <style scoped>
 .dashboard-card {
   background: white;
-
   border-radius: 28px;
-
   padding: 28px;
-
-  box-shadow:
-    0 15px 35px rgba(0,0,0,0.06);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.06);
 }
 
 .activity-item {
   display: flex;
   align-items: center;
   gap: 14px;
-
   padding: 16px;
-
   border-radius: 18px;
-
   background: #f8fbfa;
-
   margin-bottom: 16px;
 }
 
 .activity-icon {
   width: 46px;
   height: 46px;
-
   border-radius: 14px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   color: white;
 }
 
@@ -87,5 +96,18 @@ defineProps({
 
 .red {
   background: #ef4444;
+}
+
+.orange {
+  background: #f97316;
+}
+
+.empty-state {
+  padding: 18px;
+  border-radius: 18px;
+  background: #f8fbfa;
+  color: #7b8794;
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>
