@@ -72,24 +72,35 @@
 </template>
 
 <script setup>
-  definePageMeta({
-    layout: 'admin'
-  })
+definePageMeta({
+  layout: 'admin'
+})
 
-  const {
-    loading,
-    analytics,
-    attendanceChart,
-    quickStats,
-    activities,
-    notifications,
-    departments,
-    fetchDashboard
-  } = useDashboard()
+const {
+  loading,
+  analytics,
+  attendanceChart,
+  quickStats,
+  activities,
+  notifications,
+  departments,
+  fetchDashboard
+} = useDashboard()
 
-  onMounted(() => {
+onMounted(() => {
+  fetchDashboard()
+})
+
+onActivated(() => {
+  fetchDashboard()
+})
+
+watch(
+  () => useRoute().fullPath,
+  () => {
     fetchDashboard()
-  })
+  }
+)
 </script>
 
 <style scoped>

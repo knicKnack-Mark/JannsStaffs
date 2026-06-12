@@ -218,7 +218,7 @@
             </div>
 
             <div class="print-money-row deduction-text">
-              <span>Deductions</span>
+              <span>SSS + PhilHealth + Pag-IBIG</span>
               <strong>-{{ formatPeso(staff.deductions) }}</strong>
             </div>
 
@@ -335,7 +335,7 @@
                 </div>
 
                 <div class="breakdown-row text-danger">
-                  <span>Deductions</span>
+                  <span>SSS + PhilHealth + Pag-IBIG</span>
                   <strong>-{{ formatPeso(selectedStaff.deductions) }}</strong>
                 </div>
 
@@ -390,6 +390,8 @@ definePageMeta({
   subtitle: 'Monitor staff salary, attendance, deductions, and payroll status.'
 })
 
+const { apiFetch } = useApi()
+
 const {
   payroll,
   loading,
@@ -398,6 +400,8 @@ const {
   generatePayroll,
   markPayrollAsPaid
 } = usePayroll()
+
+const settings = ref(null)
 
 const getCurrentMonth = () => {
   return new Date().toLocaleDateString('en-PH', {
@@ -414,6 +418,33 @@ const selectedStaff = ref(null)
 const printMode = ref('none')
 
 let observer = null
+
+const deductionSettings = computed(() => {
+  const payrollSettings = settings.value?.payroll || {}
+
+  return {
+    sss: Number(payrollSettings.sssDeduction || 0),
+    philHealth: Number(payrollSettings.philHealthDeduction || 0),
+    pagIbig: Number(payrollSettings.pagIbigDeduction || 0)
+  }
+})
+
+const totalDefaultDeductions = computed(() => {
+  return (
+    deductionSettings.value.sss +
+    deductionSettings.value.philHealth +
+    deductionSettings.value.pagIbig
+  )
+})
+
+const fetchSettings = async () => {
+  try {
+    const response = await apiFetch('/settings')
+    settings.value = response.settings
+  } catch (error) {
+    console.error('Failed to fetch settings:', error)
+  }
+}
 
 const availableMonths = computed(() => {
   const months = []
@@ -441,16 +472,24 @@ const availableMonths = computed(() => {
 })
 
 const payrollWithNet = computed(() => {
-  return payroll.value.map((staff) => ({
-    ...staff,
-    image: staff.image || null,
-    salary: Number(staff.salary || 0),
-    presentDays: Number(staff.presentDays || 0),
-    absentDays: Number(staff.absentDays || 0),
-    grossSalary: Number(staff.grossSalary || 0),
-    deductions: Number(staff.deductions || 0),
-    netSalary: Number(staff.netSalary ?? staff.grossSalary - staff.deductions)
-  }))
+  return payroll.value.map((staff) => {
+    const grossSalary = Number(staff.grossSalary || 0)
+    const deductions = totalDefaultDeductions.value
+
+    return {
+      ...staff,
+      image: staff.image || null,
+      salary: Number(staff.salary || 0),
+      presentDays: Number(staff.presentDays || 0),
+      absentDays: Number(staff.absentDays || 0),
+      grossSalary,
+      sssDeduction: deductionSettings.value.sss,
+      philHealthDeduction: deductionSettings.value.philHealth,
+      pagIbigDeduction: deductionSettings.value.pagIbig,
+      deductions,
+      netSalary: Math.max(grossSalary - deductions, 0)
+    }
+  })
 })
 
 const positions = computed(() => {
@@ -524,7 +563,7 @@ const payrollCards = computed(() => [
   {
     title: 'Total Deductions',
     value: formatPeso(totalDeductions.value),
-    description: 'Absences and deductions',
+    description: 'SSS, PhilHealth, Pag-IBIG',
     icon: 'solar:bill-check-bold-duotone',
     color: 'orange'
   },
@@ -645,11 +684,13 @@ onMounted(async () => {
     }
   )
 
+  await fetchSettings()
   await fetchPayroll(selectedMonth.value)
   await observeScrollItems()
 })
 
 watch(selectedMonth, async () => {
+  await fetchSettings()
   await fetchPayroll(selectedMonth.value)
 })
 
