@@ -1,9 +1,9 @@
 import { ref } from 'vue'
-import { useToast } from 'vue-toastification'
+import toastification from 'vue-toastification'
 
 export const usePayroll = () => {
   const { apiFetch } = useApi()
-  const toast = useToast()
+  const { useToast } = toastification
 
   const payroll = ref([])
   const loading = ref(false)
