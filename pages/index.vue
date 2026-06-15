@@ -185,14 +185,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import toastification from 'vue-toastification'
+import { useToast } from 'vue-toastification'
 
 definePageMeta({
   layout: false
 })
 
 const { apiFetch } = useApi()
-const { useToast } = toastification
 const toast = useToast()
 
 const showPassword = ref(false)

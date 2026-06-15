@@ -1,9 +1,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import toastification from 'vue-toastification'
+import { useToast } from 'vue-toastification'
 
 export const useAttendance = () => {
   const { apiFetch } = useApi()
-  const { useToast } = toastification
+  const toast = useToast()
 
   const {
     startPageLoading,
