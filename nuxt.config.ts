@@ -3,6 +3,8 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
 
+  ssr: false,
+
   devtools: {
     enabled: true
   },
@@ -14,6 +16,14 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE
+    }
+  },
+
+  nitro: {
+    prerender: {
+      routes: ['/'],
+      crawlLinks: false,
+      failOnError: false
     }
   },
 
@@ -30,5 +40,5 @@ export default defineNuxtConfig({
     'bootstrap/dist/css/bootstrap.min.css',
     '@/assets/styles/global.css',
     '~/assets/scss/main.scss'
-  ],
+  ]
 })
