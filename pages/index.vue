@@ -185,14 +185,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useToast } from 'vue-toastification'
 
 definePageMeta({
   layout: false
 })
 
 const { apiFetch } = useApi()
-const toast = useToast()
+const { $toast } = useNuxtApp()
 
 const showPassword = ref(false)
 const pageLoaded = ref(false)
@@ -245,7 +244,7 @@ const handleLogin = async () => {
     tokenCookie.value = res.token
     userCookie.value = res.user
 
-    toast.success(res.message || 'Login successful')
+    $toast.success(res.message || 'Login successful')
 
     setTimeout(async () => {
       await navigateTo('/admin')
@@ -254,7 +253,7 @@ const handleLogin = async () => {
     const validationMessage = getValidationMessage(err)
     const backendMessage = getBackendMessage(err)
 
-    toast.error(validationMessage || backendMessage)
+    $toast.error(validationMessage || backendMessage)
   } finally {
     loading.value = false
   }
