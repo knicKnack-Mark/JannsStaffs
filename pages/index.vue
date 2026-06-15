@@ -191,7 +191,7 @@ definePageMeta({
 })
 
 const { apiFetch } = useApi()
-const { $toast } = useNuxtApp()
+const nuxtApp = useNuxtApp()
 
 const showPassword = ref(false)
 const pageLoaded = ref(false)
@@ -205,6 +205,12 @@ const form = reactive({
   email: '',
   password: ''
 })
+
+const showToast = (type, message) => {
+  if (process.client && nuxtApp.$toast) {
+    nuxtApp.$toast[type](message)
+  }
+}
 
 const getBackendMessage = (err) => {
   return (
@@ -244,7 +250,7 @@ const handleLogin = async () => {
     tokenCookie.value = res.token
     userCookie.value = res.user
 
-    $toast.success(res.message || 'Login successful')
+    showToast('success', res.message || 'Login successful')
 
     setTimeout(async () => {
       await navigateTo('/admin')
@@ -253,7 +259,7 @@ const handleLogin = async () => {
     const validationMessage = getValidationMessage(err)
     const backendMessage = getBackendMessage(err)
 
-    $toast.error(validationMessage || backendMessage)
+    showToast('error', validationMessage || backendMessage)
   } finally {
     loading.value = false
   }
