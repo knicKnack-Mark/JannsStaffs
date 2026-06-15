@@ -193,6 +193,7 @@ definePageMeta({
 
 const { apiFetch } = useApi()
 const { useToast } = toastification
+const toast = useToast()
 
 const showPassword = ref(false)
 const pageLoaded = ref(false)
