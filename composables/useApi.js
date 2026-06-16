@@ -23,7 +23,7 @@ export const useApi = () => {
         token.value = null
         user.value = null
 
-        return navigateTo('/admin/login')
+        return navigateTo('/')
       }
 
       throw err
