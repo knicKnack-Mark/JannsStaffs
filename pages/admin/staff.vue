@@ -6,7 +6,7 @@
     <section class="mb-4 scroll-animate">
       <div class="row g-4">
         <div
-          v-for="(card, index) in summaryCards"
+          v-for="(card, index) in safeSummaryCards"
           :key="card.title"
           class="col-12 col-sm-6 col-xl-3 scroll-animate"
           :style="{ transitionDelay: `${index * 0.08}s` }"
@@ -93,7 +93,7 @@
         class="row g-4"
       >
         <div
-          v-for="(staff, index) in filteredStaff"
+          v-for="(staff, index) in safeFilteredStaff"
           :key="staff.id"
           class="col-12 col-sm-6 col-xl-4 col-xxl-3 scroll-animate"
           :style="{ transitionDelay: `${index * 0.06}s` }"
@@ -108,7 +108,7 @@
         </div>
 
         <div
-          v-if="!loading && filteredStaff.length === 0"
+          v-if="!loading && safeFilteredStaff.length === 0"
           key="empty"
           class="col-12 scroll-animate"
         >
@@ -132,9 +132,9 @@
 
     <!-- REUSABLE STAFF MODAL -->
     <AdminStaffFormModal
-      :show="staffModal.show"
-      :mode="staffModal.mode"
-      :staff="staffModal.staff"
+      :show="showStaffModal"
+      :mode="staffModalMode"
+      :staff="selectedStaffForModal"
       :loading="saving"
       @close="closeStaffModal"
       @save="handleSaveStaff"
@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { computed, ref, onMounted, nextTick, watch } from 'vue'
 
 definePageMeta({
   title: 'Staff',
@@ -166,16 +166,40 @@ const {
   toggleStatus
 } = useStaff()
 
-const staffModal = ref({
-  show: false,
-  mode: 'add',
-  staff: null
+const safeFilteredStaff = computed(() => {
+  if (Array.isArray(filteredStaff?.value)) {
+    return filteredStaff.value
+  }
+
+  if (Array.isArray(filteredStaff)) {
+    return filteredStaff
+  }
+
+  return []
 })
+
+const safeSummaryCards = computed(() => {
+  if (Array.isArray(summaryCards?.value)) {
+    return summaryCards.value
+  }
+
+  if (Array.isArray(summaryCards)) {
+    return summaryCards
+  }
+
+  return []
+})
+
+const showStaffModal = ref(false)
+const staffModalMode = ref('add')
+const selectedStaffForModal = ref(null)
 
 let observer = null
 
 const observeScrollItems = async () => {
   await nextTick()
+
+  if (!process.client) return
 
   const animatedItems = document.querySelectorAll('.scroll-animate:not(.show)')
 
@@ -204,7 +228,7 @@ onMounted(async () => {
 })
 
 watch(
-  filteredStaff,
+  safeFilteredStaff,
   async () => {
     await observeScrollItems()
   },
@@ -212,27 +236,24 @@ watch(
 )
 
 const openAddStaffModal = () => {
-  staffModal.value = {
-    show: true,
-    mode: 'add',
-    staff: null
-  }
+  staffModalMode.value = 'add'
+  selectedStaffForModal.value = null
+  showStaffModal.value = true
 }
 
 const openEditStaffModal = (staff) => {
-  staffModal.value = {
-    show: true,
-    mode: 'edit',
-    staff
-  }
+  staffModalMode.value = 'edit'
+  selectedStaffForModal.value = staff
+  showStaffModal.value = true
 }
 
 const closeStaffModal = () => {
-  staffModal.value.show = false
+  showStaffModal.value = false
+  selectedStaffForModal.value = null
 }
 
 const handleSaveStaff = async (form) => {
-  if (staffModal.value.mode === 'edit') {
+  if (staffModalMode.value === 'edit') {
     await updateStaff(form, closeStaffModal)
     return
   }

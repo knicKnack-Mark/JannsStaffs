@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import toastification from 'vue-toastification'
+import { useToast } from 'vue-toastification'
 
 export const usePayroll = () => {
   const { apiFetch } = useApi()
@@ -9,18 +9,35 @@ export const usePayroll = () => {
   const loading = ref(false)
   const saving = ref(false)
 
+  const normalizePayroll = (item) => ({
+    id: item.id,
+    staffId: item.staffId,
+    employeeId: item.employeeId,
+    name: item.name,
+    position: item.position,
+    image: item.image || item.avatar || null,
+    salary: Number(item.salary || 0),
+    presentDays: Number(item.presentDays || 0),
+    absentDays: Number(item.absentDays || 0),
+    grossSalary: Number(item.grossSalary || 0),
+    deductions: Number(item.deductions || 0),
+    netSalary: Number(item.netSalary || 0),
+    status: item.status || 'Pending',
+    month: item.month || ''
+  })
+
   const fetchPayroll = async (month) => {
     try {
       loading.value = true
 
-      const res = await apiFetch('/payrolls', {
+      const response = await apiFetch('/payrolls', {
         query: { month }
       })
 
-      payroll.value = res.data || []
-    } catch (err) {
-      console.error(err)
-      toast.error(err?.data?.message || 'Failed to load payroll.')
+      payroll.value = (response.data || []).map(normalizePayroll)
+    } catch (error) {
+      console.error(error)
+      toast.error(error?.data?.message || 'Failed to load payroll.')
     } finally {
       loading.value = false
     }
@@ -30,19 +47,17 @@ export const usePayroll = () => {
     try {
       saving.value = true
 
-      const res = await apiFetch('/payrolls/generate', {
+      const response = await apiFetch('/payrolls/generate', {
         method: 'POST',
-        body: {
-          payroll_month: month,
-          working_days: 26
-        }
+        body: { month }
       })
 
-      toast.success(res.message || 'Payroll generated successfully.')
-      await fetchPayroll(month)
-    } catch (err) {
-      console.error(err)
-      toast.error(err?.data?.message || 'Failed to generate payroll.')
+      payroll.value = (response.data || []).map(normalizePayroll)
+
+      toast.success(response.message || 'Payroll generated successfully.')
+    } catch (error) {
+      console.error(error)
+      toast.error(error?.data?.message || 'Failed to generate payroll.')
     } finally {
       saving.value = false
     }
@@ -50,20 +65,28 @@ export const usePayroll = () => {
 
   const markPayrollAsPaid = async (id) => {
     try {
-      const res = await apiFetch(`/payrolls/${id}/paid`, {
+      saving.value = true
+
+      const response = await apiFetch(`/payrolls/${id}/paid`, {
         method: 'PATCH'
       })
 
-      const index = payroll.value.findIndex(item => item.id === id)
+      if (response.data) {
+        const updatedPayroll = normalizePayroll(response.data)
 
-      if (index !== -1) {
-        payroll.value[index] = res.data
+        const index = payroll.value.findIndex((item) => item.id === id)
+
+        if (index !== -1) {
+          payroll.value[index] = updatedPayroll
+        }
       }
 
-      toast.success(res.message || 'Payroll marked as paid.')
-    } catch (err) {
-      console.error(err)
-      toast.error(err?.data?.message || 'Failed to update payroll.')
+      toast.success(response.message || 'Payroll marked as paid.')
+    } catch (error) {
+      console.error(error)
+      toast.error(error?.data?.message || 'Failed to mark payroll as paid.')
+    } finally {
+      saving.value = false
     }
   }
 

@@ -1,5 +1,5 @@
 import { computed, nextTick, ref, watch } from 'vue'
-import toastification from 'vue-toastification'
+import { useToast } from 'vue-toastification'
 
 export const useAttendance = () => {
   const { apiFetch } = useApi()
@@ -69,6 +69,11 @@ export const useAttendance = () => {
     })
   })
 
+  const getPercentage = (value, total) => {
+    if (!total) return 0
+    return Math.round((value / total) * 100)
+  }
+
   const summaryCards = computed(() => {
     const totalStaff = attendance.value.length
 
@@ -110,11 +115,6 @@ export const useAttendance = () => {
       }
     ]
   })
-
-  const getPercentage = (value, total) => {
-    if (!total) return 0
-    return Math.round((value / total) * 100)
-  }
 
   const getInitials = (name = '') => {
     return name
@@ -440,6 +440,7 @@ export const useAttendance = () => {
     URL.revokeObjectURL(url)
 
     addLog('Attendance report was exported.', 'success')
+    toast.success('Attendance report exported successfully.')
   }
 
   watch(selectedDate, async () => {
