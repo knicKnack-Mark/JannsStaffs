@@ -43,7 +43,7 @@
             class="btn action-btn action-btn-primary"
             type="button"
             :disabled="saving"
-            @click="generatePayroll(selectedMonth)"
+            @click="handleGeneratePayroll"
           >
             <Icon name="solar:refresh-circle-bold-duotone" size="20" />
             <span>{{ saving ? 'Generating...' : 'Generate Payroll' }}</span>
@@ -396,7 +396,6 @@ const {
   payroll,
   loading,
   saving,
-  fetchPayroll,
   generatePayroll,
   markPayrollAsPaid
 } = usePayroll()
@@ -416,6 +415,7 @@ const selectedStatus = ref('All')
 const selectedPosition = ref('All')
 const selectedStaff = ref(null)
 const printMode = ref('none')
+const hasGeneratedPayroll = ref(false)
 
 let observer = null
 
@@ -583,6 +583,12 @@ const payrollCards = computed(() => [
   }
 ])
 
+const handleGeneratePayroll = async () => {
+  await generatePayroll(selectedMonth.value)
+  hasGeneratedPayroll.value = true
+  await observeScrollItems()
+}
+
 const observeScrollItems = async () => {
   await nextTick()
 
@@ -685,13 +691,15 @@ onMounted(async () => {
   )
 
   await fetchSettings()
-  await fetchPayroll(selectedMonth.value)
   await observeScrollItems()
 })
 
 watch(selectedMonth, async () => {
+  payroll.value = []
+  hasGeneratedPayroll.value = false
+
   await fetchSettings()
-  await fetchPayroll(selectedMonth.value)
+  await observeScrollItems()
 })
 
 watch(

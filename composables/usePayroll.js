@@ -49,10 +49,13 @@ export const usePayroll = () => {
 
       const response = await apiFetch('/payrolls/generate', {
         method: 'POST',
-        body: { month }
+        body: {
+          payroll_month: month,
+          working_days: 26
+        }
       })
 
-      payroll.value = (response.data || []).map(normalizePayroll)
+      await fetchPayroll(month)
 
       toast.success(response.message || 'Payroll generated successfully.')
     } catch (error) {
