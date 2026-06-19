@@ -15,90 +15,16 @@
 
     <template v-else>
       <!-- PROFILE SETTINGS -->
-      <section
+      <ProfileSettings
         v-if="activeTab === 'profile'"
-        class="fade-slide-up delay-2"
-      >
-        <div class="row g-4">
-          <div class="col-xl-4">
-            <div class="settings-card text-center">
-              <div class="profile-avatar mx-auto mb-3">
-                <Icon name="solar:user-bold-duotone" size="54" />
-              </div>
-
-              <h5 class="mb-1 fw-bold">
-                {{ profile.name }}
-              </h5>
-
-              <p class="text-muted mb-3">
-                Super Admin
-              </p>
-
-              <button
-                type="button"
-                class="btn btn-outline-main w-100"
-              >
-                Change Photo
-              </button>
-            </div>
-          </div>
-
-          <div class="col-xl-8">
-            <AdminSettingsCard
-              title="Admin Profile"
-              description="Update the admin account information."
-              icon="solar:user-id-bold-duotone"
-            >
-              <div class="row g-3">
-                <AdminSettingsField v-model="profile.name" label="Admin Name" />
-                <AdminSettingsField v-model="profile.username" label="Username" />
-                <AdminSettingsField v-model="profile.email" label="Email Address" type="email" />
-                <AdminSettingsField v-model="profile.contact" label="Contact Number" />
-                <AdminSettingsField v-model="profile.password" label="New Password" type="password" placeholder="Enter new password" />
-                <AdminSettingsField v-model="profile.confirmPassword" label="Confirm Password" type="password" placeholder="Confirm new password" />
-              </div>
-            </AdminSettingsCard>
-          </div>
-        </div>
-      </section>
+        :profile="profile"
+      />
 
       <!-- SYSTEM SETTINGS -->
-      <section
+      <SystemSettings
         v-if="activeTab === 'system'"
-        class="fade-slide-up delay-2"
-      >
-        <AdminSettingsCard
-          title="System Settings"
-          description="Basic configuration for JANNS SPRING RESORT staff system."
-          icon="solar:settings-bold-duotone"
-        >
-          <div class="row g-3">
-            <AdminSettingsField v-model="system.name" label="System Name" />
-            <AdminSettingsField v-model="system.type" label="System Type" />
-
-            <AdminSettingsField
-              v-model="system.currency"
-              label="Default Currency"
-              type="select"
-              :options="currencyOptions"
-            />
-
-            <AdminSettingsField
-              v-model="system.timezone"
-              label="Timezone"
-              type="select"
-              :options="timezoneOptions"
-            />
-
-            <AdminSettingsField
-              v-model="system.description"
-              label="System Description"
-              type="textarea"
-              column-class="col-12"
-            />
-          </div>
-        </AdminSettingsCard>
-      </section>
+        v-model="system"
+      />
 
       <!-- ATTENDANCE SETTINGS -->
       <section
@@ -221,36 +147,13 @@
       </section>
 
       <!-- DEPARTMENTS SETTINGS -->
-      <section
+      <DepartmentSettings
         v-if="activeTab === 'departments'"
-        class="fade-slide-up delay-2"
-      >
-        <div class="row g-4">
-          <div class="col-xl-6">
-            <AdminSettingsOptionList
-              title="Departments"
-              description="Manage staff department options."
-              icon="solar:buildings-2-bold-duotone"
-              placeholder="Add department"
-              :items="departments"
-              @add="addDepartment"
-              @remove="removeDepartment"
-            />
-          </div>
-
-          <div class="col-xl-6">
-            <AdminSettingsOptionList
-              title="Positions"
-              description="Manage staff position options."
-              icon="solar:user-id-bold-duotone"
-              placeholder="Add position"
-              :items="positions"
-              @add="addPosition"
-              @remove="removePosition"
-            />
-          </div>
-        </div>
-      </section>
+        :departments="departments"
+        :positions="positions"
+        @update:departments="departments = $event"
+        @update:positions="positions = $event"
+      />
     </template>
 
     <div
@@ -272,6 +175,9 @@
 </template>
 
 <script setup>
+import DepartmentSettings from '~/components/admin/settings/DepartmentSettings.vue'
+import SystemSettings from '~/components/admin/settings/SystemSettings.vue'
+import ProfileSettings from '~/components/admin/settings/ProfileSettings.vue'
 import { onMounted, ref } from 'vue'
 
 definePageMeta({
@@ -512,25 +418,6 @@ const fetchSettings = async () => {
   }
 }
 
-const addDepartment = (value) => {
-  if (!departments.value.includes(value)) {
-    departments.value.push(value)
-  }
-}
-
-const removeDepartment = (department) => {
-  departments.value = departments.value.filter((item) => item !== department)
-}
-
-const addPosition = (value) => {
-  if (!positions.value.includes(value)) {
-    positions.value.push(value)
-  }
-}
-
-const removePosition = (position) => {
-  positions.value = positions.value.filter((item) => item !== position)
-}
 
 const saveSettings = async () => {
   if (saving.value) return
